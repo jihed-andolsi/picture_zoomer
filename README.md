@@ -1,2 +1,2 @@
-# Picture zoomer and hilights drawer manager
-zoom and hilights big scale picture
+# Picture zoomer and highlights drawer manager
+zoom and highlights big scale picture
