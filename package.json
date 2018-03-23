@@ -1,0 +1,33 @@
+{
+  "name": "picture_immo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack-dev-server --port 7500",
+    "build": "webpack"
+  },
+  "author": "jihed_andoulsi@hotmail.fr",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^9.4.7",
+    "copy-webpack-plugin": "^4.4.1",
+    "html-webpack-plugin": "^2.30.1",
+    "json-loader": "^0.5.7",
+    "script-loader": "^0.7.2"
+  },
+  "dependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.3",
+    "d3": "^4.13.0",
+    "expose-loader": "^0.7.4",
+    "fs": "0.0.1-security",
+    "pixi-viewport": "^1.4.0",
+    "pixi.js": "^4.7.0",
+    "ts-loader": "^3.5.0",
+    "typescript": "^2.7.1",
+    "webpack": "^3.11.0",
+    "webpack-dev-server": "^2.11.1"
+  }
+}
