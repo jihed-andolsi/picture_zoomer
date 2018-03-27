@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 
-export class LoaderText extends PIXI.Text {
+class LoaderText extends PIXI.Text {
     constructor(width, height) {
         super("Loading 0%", {
             fill: "#555555",
@@ -14,3 +14,5 @@ export class LoaderText extends PIXI.Text {
         (this as any).y = height / 2;
     }
 }
+
+export default LoaderText;

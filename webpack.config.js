@@ -12,7 +12,7 @@ module.exports = {
 
     resolve: {
         // add '.ts' as resolvable extensions
-        // extensions: ['.js', '.ts', '.json']
+        extensions: ['.js', '.ts', '.json']
     },
     devtool: 'source-map',
     plugins: [

@@ -15,5 +15,5 @@ class LoaderText extends PIXI.Text {
         this.y = height / 2;
     }
 }
-exports.LoaderText = LoaderText;
+exports.default = LoaderText;
 //# sourceMappingURL=LoaderText.js.map

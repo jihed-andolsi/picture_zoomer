@@ -4,14 +4,14 @@ const PIXI = require("pixi.js");
 const d3 = require("d3");
 const sprites = require("./Components/sprites.json");
 const graphics = require("./Components/graphics.json");
-const Button_ts_1 = require("./Tools/Button.ts");
-const LoaderText_ts_1 = require("./Tools/LoaderText.ts");
+const Button_1 = require("./Tools/Button");
+const LoaderText_1 = require("./Tools/LoaderText");
 class Application extends PIXI.Application {
     constructor(selectorId, width, height) {
         super(width, height, { transparent: true });
         this.Customloader = new PIXI.loaders.Loader();
-        this.container = new PIXI.Container();
-        this.containerButtons = new PIXI.Container();
+        this.Container = new PIXI.Container();
+        this.ContainerButtons = new PIXI.Container();
         this.newGraphic = [];
         this.counterGraphic = 0;
         this.newGraphicObj = [];
@@ -21,8 +21,8 @@ class Application extends PIXI.Application {
         this.backgroundClicked = false;
         this.zoomToBool = false;
         const $this = this;
-        $this.container.zIndex = 0;
-        $this.containerButtons.zIndex = 1;
+        $this.Container.zIndex = 0;
+        $this.ContainerButtons.zIndex = 1;
         $this.width = width;
         $this.height = height;
         $this.selector = selectorId;
@@ -36,9 +36,9 @@ class Application extends PIXI.Application {
     setup() {
         const $this = this;
         const s = {};
-        const text = new LoaderText_ts_1.LoaderText($this.width, $this.height);
+        const text = new LoaderText_1.default($this.width, $this.height);
         $this.stage.addChild(text);
-        $this.stage.addChild($this.container);
+        $this.stage.addChild($this.Container);
         sprites.forEach((e) => {
             $this.Customloader.add(e.name, e.url);
         });
@@ -59,10 +59,18 @@ class Application extends PIXI.Application {
             s.background.x = 0;
             s.background.y = 0;
             s.background.interactive = true;
-            s.background.on("pointerdown", () => {
+            s.background.on("pointerdown", (e) => {
+                const x = (e.data.global.x - $this.zoomTrans.x) / $this.zoomTrans.scale;
+                const y = (e.data.global.y - $this.zoomTrans.y) / $this.zoomTrans.scale;
+                if ($this.startDrawing) {
+                    $this.newGraphic.push([x, y]);
+                    $this.Container.removeChild($this.newGraphicObj[$this.counterGraphic]);
+                    $this.newGraphicObj[$this.counterGraphic] = $this.createGraph($this.newGraphic);
+                    $this.Container.addChild($this.newGraphicObj[$this.counterGraphic]);
+                }
                 $this.backgroundClicked = true;
             });
-            $this.container.addChild(s.background);
+            $this.Container.addChild(s.background);
             $this.addButtons();
             $this.addGraphics();
             $this.initZoomAction();
@@ -90,7 +98,7 @@ class Application extends PIXI.Application {
                     (<any> $this).zoomToBool = true;
 
                 })*/
-                $this.container.addChild(Graph);
+                $this.Container.addChild(Graph);
                 Graphics.push(Graph);
             }
         });
@@ -109,11 +117,15 @@ class Application extends PIXI.Application {
         $this.pixiCanvas.on("click", () => {
             const x = (d3.event.x - $this.zoomTrans.x) / $this.zoomTrans.scale;
             const y = (d3.event.y - $this.zoomTrans.y) / $this.zoomTrans.scale;
+            /*console.log('x :::: ');
+            console.log('d3.event.x ::: ' + d3.event.x);
+            console.log('$this.zoomTrans.x ::: ' + $this.zoomTrans.x);
+            console.log('$this.zoomTrans.scale ::: ' + $this.zoomTrans.scale);
+            console.log('y :::: ');
+            console.log('d3.event.y ::: ' + d3.event.x);
+            console.log('$this.zoomTrans.y ::: ' + $this.zoomTrans.y);
+            console.log('$this.zoomTrans.scale ::: ' + $this.zoomTrans.scale);*/
             if ($this.startDrawing && $this.backgroundClicked) {
-                $this.newGraphic.push([x, y]);
-                $this.container.removeChild($this.newGraphicObj[$this.counterGraphic]);
-                $this.newGraphicObj[$this.counterGraphic] = $this.createGraph($this.newGraphic);
-                $this.container.addChild($this.newGraphicObj[$this.counterGraphic]);
             }
             // if($this.zoomToBool){/*$this.pixiCanvas.transition() .call($this.zoomTo([x, y], 6).event)*/ }
             $this.zoomToBool = false;
@@ -126,11 +138,11 @@ class Application extends PIXI.Application {
             $this.pixiCanvas.attr("transform", d3.event.transform);
             // if(d3.event.transform.k > 1){
             const k = d3.event.transform.k;
-            $this.container.scale.set(k);
+            $this.Container.scale.set(k);
             // if(d3.event.transform.x)
             const x = d3.event.transform.x;
             const y = d3.event.transform.y;
-            $this.container.position.set(x, y);
+            $this.Container.position.set(x, y);
         }
     }
     /*zoomTo(x, y) {
@@ -151,13 +163,13 @@ class Application extends PIXI.Application {
         c.lineStyle(2, 0xFF00FF);
         c.drawCircle(x, y, 5);
         c.endFill();
-        $this.container.addChild(c);
+        $this.Container.addChild(c);
         $this.Circls.push(c);
     }
     removeCircls() {
         const $this = this;
         $this.Circls.map((e) => {
-            $this.container.removeChild(e);
+            $this.Container.removeChild(e);
         });
     }
     createGraph(coords) {
@@ -192,9 +204,9 @@ class Application extends PIXI.Application {
         let height = 50;
         let x = 10;
         let y = $this.height - height - 20;
-        const b = new Button_ts_1.Button(width, height, x, y, "Start drawing", null);
-        $this.containerButtons.addChild(b);
-        $this.stage.addChild($this.containerButtons);
+        const b = new Button_1.default(width, height, x, y, "Start drawing", null);
+        $this.ContainerButtons.addChild(b);
+        $this.stage.addChild($this.ContainerButtons);
         b.on("click", () => {
             $this.startDrawing = !$this.startDrawing;
             if (!$this.startDrawing) {
@@ -210,15 +222,15 @@ class Application extends PIXI.Application {
         height = 50;
         x = 170;
         y = $this.height - height - 20;
-        const returnLastActionB = new Button_ts_1.Button(width, height, x, y, "Return to last action", null);
-        $this.containerButtons.addChild(returnLastActionB);
+        const returnLastActionB = new Button_1.default(width, height, x, y, "Return to last action", null);
+        $this.ContainerButtons.addChild(returnLastActionB);
         returnLastActionB.on("click", () => {
             if ($this.newGraphic.length) {
                 $this.newGraphic.splice(-1, 1);
-                $this.container.removeChild($this.newGraphicObj[$this.counterGraphic]);
+                $this.Container.removeChild($this.newGraphicObj[$this.counterGraphic]);
                 $this.newGraphicObj[$this.counterGraphic] = $this.createGraph($this.newGraphic);
                 if ($this.newGraphicObj[$this.counterGraphic]) {
-                    $this.container.addChild($this.newGraphicObj[$this.counterGraphic]);
+                    $this.Container.addChild($this.newGraphicObj[$this.counterGraphic]);
                 }
             }
         });

@@ -34,5 +34,5 @@ class Button extends PIXI.Sprite {
         this.interactive = true;
     }
 }
-exports.Button = Button;
+exports.default = Button;
 //# sourceMappingURL=Button.js.map

@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-export class Button extends PIXI.Sprite {
+export default class Button extends PIXI.Sprite {
     constructor(width, height, x, y, buttonValue, style: object | null) {
         if (!style) {
             style = new PIXI.TextStyle({
