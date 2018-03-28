@@ -11,6 +11,8 @@ export default class Application extends PIXI.Application {
     private ContainerButtons = new PIXI.Container();
     private width: number ;
     private height: number ;
+    private widthExtentMaximum: number ;
+    private heightExtentMaximum: number ;
     private selector;
     private newGraphic = [];
     private counterGraphic: number = 0;
@@ -19,12 +21,17 @@ export default class Application extends PIXI.Application {
     private zoomTrans = {x: 0, y: 0, scale: 1};
     private startDrawing: boolean = false;
     private backgroundClicked: boolean = false;
-    private zoomToBool: boolean = false;
+    // private zoomToBool: boolean = false;
     private view;
     private stage;
     private zoomHandler;
-    private pixiCanvas;
     private Graphics;
+
+
+    private canvas = null;
+    private context = null;
+    private widthCanvas = null;
+    private heightCanvas = null;
 
     constructor(selectorId, width, height) {
         super(width, height, {transparent: true});
@@ -33,6 +40,8 @@ export default class Application extends PIXI.Application {
         $this.ContainerButtons.zIndex = 1;
         $this.width = width;
         $this.height = height;
+        $this.widthExtentMaximum = $this.width + 10000;
+        $this.heightExtentMaximum = $this.width + 10000;
         $this.selector = selectorId;
         $this.appendView(selectorId);
         $this.setup();
@@ -72,10 +81,8 @@ export default class Application extends PIXI.Application {
             (s as any).background.y = 0;
             (s as any).background.interactive = true;
             (s as any).background.on("pointerdown", (e) => {
-
-                const x = (e.data.global.x - $this.zoomTrans.x) / $this.zoomTrans.scale;
-                const y = (e.data.global.y - $this.zoomTrans.y) / $this.zoomTrans.scale;
-
+                const x = $this.getD3X(e.data.global.x);
+                const y = $this.getD3Y(e.data.global.y);
                 if ($this.startDrawing){
                     $this.newGraphic.push([x, y]);
                     $this.Container.removeChild( $this.newGraphicObj[$this.counterGraphic] );
@@ -107,13 +114,10 @@ export default class Application extends PIXI.Application {
                 (Graph as any).mouseout = function() {
                     (this as any).alpha = 0;
                 };
-                /*(<any> Graph).on("click", () => {
-                    // let x = (<any> this).x;
-                    // let y = (<any> this).y;
-                    // $this.zoomTo(x, y);
-                    (<any> $this).zoomToBool = true;
 
-                })*/
+                (Graph as any).pointerdown = function(e) {
+                    $this.zoomTo(coords[0][0], coords[0][1], 7);
+                };
                 ($this as any).Container.addChild(Graph);
                 Graphics.push(Graph);
             }
@@ -123,61 +127,49 @@ export default class Application extends PIXI.Application {
 
     private initZoomAction() {
         const $this = this;
-        const transform = d3.zoomIdentity.scale(0.1);
+        $this.canvas = d3.select(`#${$this.selector} canvas`);
+        $this.context = $this.canvas.node().getContext("2d");
+        $this.widthCanvas = $this.canvas.property("width");
+        $this.heightCanvas = $this.canvas.property("height");
+
         $this.zoomHandler = d3.zoom()
             .scaleExtent([.1, 8])
-            .translateExtent([[0, 0], [$this.width + 10000, $this.height + 10000]])
-            .on("zoom", zoomActions);
-
-        $this.pixiCanvas = d3.select(`#${$this.selector} canvas`);
-        $this.pixiCanvas.call($this.zoomHandler).call($this.zoomHandler.transform, transform);
-        // pixiCanvas.style("width", $this.width).style("height", $this.height);
-
-        $this.pixiCanvas.on("click", () => {
+            .translateExtent([[0, 0], [$this.widthExtentMaximum, $this.heightExtentMaximum]])
+            .on("zoom", () => {
+                return $this.zoomActions($this);
+            });
+        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(0, 0).scale(0.1));
+        $this.canvas.on("click", () => {
             const x = (d3.event.x - $this.zoomTrans.x) / $this.zoomTrans.scale;
             const y = (d3.event.y - $this.zoomTrans.y) / $this.zoomTrans.scale;
-            /*console.log('x :::: ');
-            console.log('d3.event.x ::: ' + d3.event.x);
-            console.log('$this.zoomTrans.x ::: ' + $this.zoomTrans.x);
-            console.log('$this.zoomTrans.scale ::: ' + $this.zoomTrans.scale);
-            console.log('y :::: ');
-            console.log('d3.event.y ::: ' + d3.event.x);
-            console.log('$this.zoomTrans.y ::: ' + $this.zoomTrans.y);
-            console.log('$this.zoomTrans.scale ::: ' + $this.zoomTrans.scale);*/
-            if ($this.startDrawing && $this.backgroundClicked) {
-
-            }
-            // if($this.zoomToBool){/*$this.pixiCanvas.transition() .call($this.zoomTo([x, y], 6).event)*/ }
-            $this.zoomToBool = false;
-            $this.backgroundClicked = false;
         });
-        function zoomActions() {
-            $this.zoomTrans.x = d3.event.transform.x;
-            $this.zoomTrans.y = d3.event.transform.y;
-            $this.zoomTrans.scale = d3.event.transform.k;
-            $this.pixiCanvas.attr("transform", d3.event.transform);
-            // if(d3.event.transform.k > 1){
-            const k = d3.event.transform.k;
-            $this.Container.scale.set(k);
-            // if(d3.event.transform.x)
-            const x = d3.event.transform.x;
-            const y = d3.event.transform.y;
-            $this.Container.position.set(x, y);
-        }
     }
-
-    /*zoomTo(x, y) {
+    private zoomActions($this) {
+        const x = d3.event.transform.x;
+        const y = d3.event.transform.y;
+        const k = d3.event.transform.k;
+        $this.zoomTrans.x = x;
+        $this.zoomTrans.y = y;
+        $this.zoomTrans.scale = k;
+        $this.canvas.attr("transform", d3.event.transform);
+        $this.Container.scale.set(k);
+        $this.Container.position.set(x, y);
+    }
+    private zoomTo(x: number, y: number, k: number) {
         const $this = this;
-        let zoom = d3.zoom();
-        let selection = d3.select("#" + $this.selector + " canvas");
-        let t = zoom.scaleTo(selection, 6)
-        selection.call($this.zoomHandler.transform, t);
+        console.log(`zoom to ${x} ${y} ==> ${k}`);
+        $this.zoomHandler.scaleTo($this.canvas, k);
+        $this.zoomHandler.translateTo($this.canvas, x, y);
+        // var t = d3.zoomIdentity.translate(x, y).scale(k);
+        // $this.canvas.transition().duration(750).call($this.zoomHandler.transform, d3.zoomIdentity);
+        // $this.canvas.transition().duration(750).call($this.zoomHandler.translateBy, x, y)
+        /*$this.zoomHandler.translateBy($this.canvas,
+            $this.canvas.transition().duration(750).call($this.zoomHandler.transform, d3.zoomIdentity
+            .scale(8)
+            .translate(-x, -y))
+            .on("end", function() { console.log('end') })
+        );*/
     }
-
-    private zoomTo(point, scale) {
-
-    }
-     */
 
     private drawCircle(x, y) {
         const $this = this;
@@ -258,6 +250,16 @@ export default class Application extends PIXI.Application {
             }
         });
 
+    }
+
+    public getD3X(x: number){
+        const $this = this;
+        return (x - $this.zoomTrans.x) / $this.zoomTrans.scale
+    }
+
+    public getD3Y(y: number){
+        const $this = this;
+        return (y - $this.zoomTrans.x) / $this.zoomTrans.scale
     }
 
 }
