@@ -16,13 +16,14 @@ class Application extends PIXI.Application {
         this.counterGraphic = 0;
         this.newGraphicObj = [];
         this.Circls = [];
-        this.zoomTrans = { x: 0, y: 0, scale: 1 };
+        this.zoomTrans = { x: 0, y: 0, scale: .1 };
         this.startDrawing = false;
         this.backgroundClicked = false;
         this.canvas = null;
         this.context = null;
         this.widthCanvas = null;
         this.heightCanvas = null;
+        this.D3Interval = null;
         const $this = this;
         $this.Container.zIndex = 0;
         $this.ContainerButtons.zIndex = 1;
@@ -97,7 +98,10 @@ class Application extends PIXI.Application {
                     this.alpha = 0;
                 };
                 Graph.pointerdown = function (e) {
-                    $this.zoomTo(coords[0][0], coords[0][1], 7);
+                    // console.dir(this);
+                    // let xx = this._bounds;
+                    // console.dir(xx);
+                    $this.zoomTo(coords[0][0], coords[0][1], 4);
                 };
                 $this.Container.addChild(Graph);
                 Graphics.push(Graph);
@@ -116,6 +120,8 @@ class Application extends PIXI.Application {
             .translateExtent([[0, 0], [$this.widthExtentMaximum, $this.heightExtentMaximum]])
             .on("zoom", () => {
             return $this.zoomActions($this);
+        }).filter(() => {
+            return !$this.D3Interval;
         });
         $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(0, 0).scale(0.1));
         $this.canvas.on("click", () => {
@@ -137,17 +143,24 @@ class Application extends PIXI.Application {
     zoomTo(x, y, k) {
         const $this = this;
         console.log(`zoom to ${x} ${y} ==> ${k}`);
-        $this.zoomHandler.scaleTo($this.canvas, k);
-        $this.zoomHandler.translateTo($this.canvas, x, y);
-        // var t = d3.zoomIdentity.translate(x, y).scale(k);
-        // $this.canvas.transition().duration(750).call($this.zoomHandler.transform, d3.zoomIdentity);
-        // $this.canvas.transition().duration(750).call($this.zoomHandler.translateBy, x, y)
-        /*$this.zoomHandler.translateBy($this.canvas,
-            $this.canvas.transition().duration(750).call($this.zoomHandler.transform, d3.zoomIdentity
-            .scale(8)
-            .translate(-x, -y))
-            .on("end", function() { console.log('end') })
-        );*/
+        let tk = d3.interpolateNumber($this.zoomTrans.scale, k);
+        let tx = d3.interpolateNumber(0, x);
+        let ty = d3.interpolateNumber(0, y);
+        let temp = 0;
+        $this.D3Interval = d3.interval(function () {
+            if (temp < 1) {
+                temp += 0.01;
+                let k_temp = tk(temp);
+                let x_temp = tx(temp);
+                let y_temp = ty(temp);
+                $this.zoomHandler.scaleTo($this.canvas, k_temp);
+                $this.zoomHandler.translateTo($this.canvas, x, y);
+            }
+            else {
+                $this.D3Interval.stop();
+                $this.D3Interval = null;
+            }
+        }, 1);
     }
     drawCircle(x, y) {
         const $this = this;
