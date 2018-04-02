@@ -5,7 +5,8 @@ const graphics = require("./Components/graphics.json");
 import Button from "./Tools/Button";
 import LoaderText from "./Tools/LoaderText";
 require("./Assets/css/_custom.scss");
-
+var $ = require("jquery");
+import {scaleToWindow} from "./Tools/Scale";
 
 export default class Application extends PIXI.Application {
     private Customloader = new PIXI.loaders.Loader();
@@ -37,23 +38,25 @@ export default class Application extends PIXI.Application {
     private D3Interval = null;
 
     constructor(selectorId, width, height) {
-        super(width, height, {transparent: true});
-        const $this = this;
-        $this.Container.zIndex = 0;
-        $this.ContainerButtons.zIndex = 1;
-        $this.width = width;
-        $this.height = height;
-        $this.widthExtentMaximum = $this.width + 10000;
-        $this.heightExtentMaximum = $this.width + 10000;
-        $this.selector = selectorId;
-        $this.appendView(selectorId);
-        $this.setup();
-        $this.resize();
+        super(width, height, {transparent: true, autoResize: true});
+        this.Container.zIndex = 0;
+        this.ContainerButtons.zIndex = 1;
+        this.width = width;
+        this.height = height;
+        this.widthExtentMaximum = this.width + 10000;
+        this.heightExtentMaximum = this.width + 10000;
+        this.selector = selectorId;
+        this.appendView(selectorId);
+        this.setup();
+        this.resize();
     }
 
     private appendView(selectorId) {
         const $this = this;
         document.getElementById($this.selector).appendChild($this.view);
+        $("canvas").addClass('row');
+        $("canvas").attr('id', 'canvas-container');
+        $("canvas").css('margin', '0');
     }
 
     private setup() {
@@ -147,7 +150,7 @@ export default class Application extends PIXI.Application {
             }).filter(() => {
                 return !$this.D3Interval;
             });
-        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(0, 0).scale(0.1));
+        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(364,0).scale(0.1));
         $this.canvas.on("click", () => {
             const x = (d3.event.x - $this.zoomTrans.x) / $this.zoomTrans.k;
             const y = (d3.event.y - $this.zoomTrans.y) / $this.zoomTrans.k;
@@ -177,15 +180,15 @@ export default class Application extends PIXI.Application {
         $this.canvas.call($this.zoomHandler, t);
          */
         const trans = d3.zoomTransform($this.canvas.node());
-        const fx = d3.interpolateNumber(x);
-        const fy = d3.interpolateNumber(y);
+        const fx = d3.interpolateNumber(364, x);
+        const fy = d3.interpolateNumber(0, y);
         const fk = d3.interpolateNumber(trans.k, k);
         let temp = 0;
         $this.D3Interval = d3.interval(function () {
             if (temp < 1) {
                 temp += 0.005;
                 $this.zoomHandler.scaleBy($this.canvas, fk(temp));
-                $this.zoomHandler.translateBy($this.canvas, fx(x), fy(y));
+                $this.zoomHandler.translateBy($this.canvas, x, y);
             } else {
                 $this.D3Interval.stop();
                 $this.D3Interval = null;
@@ -286,64 +289,28 @@ export default class Application extends PIXI.Application {
 
     public resize() {
         const $this = this;
-        /*window.addEventListener('resize', ()=>{
+        $this.rendererResize($this);
+        window.addEventListener('resize', ()=>{
             return $this.rendererResize($this);
         });
         window.addEventListener('deviceOrientation', ()=>{
             return $this.rendererResize($this);
-        });*/
+        });
     };
     /**
      * Calculate the current window size and set the canvas renderer size accordingly
      */
     public rendererResize ($this) {
-
-        var targetWidth = 1024;
-        var targetHeight = 768;
-        /**
-         * Set the canvas size and display size
-         * This way we can support retina graphics and make our game really crisp
-         */
-        ($this as any ).width = $this.width * window.devicePixelRatio;
-        ($this as any ).height = $this.height * window.devicePixelRatio;
-        //($this as any ).style.width = width + 'px';
-        //($this as any ).style.height = height + 'px';
-
-        /**
-         * Resize the PIXI renderer
-         * Let PIXI know that we changed the size of the viewport
-         */
-        let renderer = PIXI.autoDetectRenderer($this.width, $this.height);
-        renderer.resize($this.width, $this.height);
-
-        /**
-         * Scale the canvas horizontally and vertically keeping in mind the screen estate we have
-         * at our disposal. This keeps the relative game dimensions in place.
-         */
-        if ($this.height / targetHeight < $this.width / targetWidth) {
-            $this.Container.scale.x = $this.height / targetHeight;
-        } else {
-            $this.Container.scale.y = $this.width / targetWidth;
-        }
-
-        /**
-         * Some sugar
-         * Set the x horizontal center point of the canvas after resizing.
-         * This should be used for engines which calculate object position from anchor 0.5/0.5
-         */
-        $this.Container.pivot.y = -($this.width * (1 / $this.Container.scale.y) / 2) * window.devicePixelRatio;
-        $this.Container.pivot.x = -($this.width * (1 / $this.Container.scale.x) / 2) * window.devicePixelRatio;
-
-        /**
-         * iOS likes to scroll when rotating - fix that
-         */
-        window.scrollTo(0, 0);
+        let {scale, scaleX, scaleY} = scaleToWindow('canvas-container');
+        //$this.Container.scale.set(scale);
     };
+
+
 
 }
 
 window.onload = () => {
     (() => {
-        return new Application("container", "100%", "100%");
+        return new Application("container", document.getElementById('container').offsetWidth, document.body.clientHeight);
     })();
 };
