@@ -6,6 +6,7 @@ const sprites = require("./Components/sprites.json");
 const graphics = require("./Components/graphics.json");
 const Button_1 = require("./Tools/Button");
 const LoaderText_1 = require("./Tools/LoaderText");
+require("./Assets/css/_custom.scss");
 class Application extends PIXI.Application {
     constructor(selectorId, width, height) {
         super(width, height, { transparent: true });
@@ -16,7 +17,7 @@ class Application extends PIXI.Application {
         this.counterGraphic = 0;
         this.newGraphicObj = [];
         this.Circls = [];
-        this.zoomTrans = { x: 0, y: 0, scale: .1 };
+        this.zoomTrans = null;
         this.startDrawing = false;
         this.backgroundClicked = false;
         this.canvas = null;
@@ -34,6 +35,7 @@ class Application extends PIXI.Application {
         $this.selector = selectorId;
         $this.appendView(selectorId);
         $this.setup();
+        $this.resize();
     }
     appendView(selectorId) {
         const $this = this;
@@ -101,7 +103,7 @@ class Application extends PIXI.Application {
                     // console.dir(this);
                     // let xx = this._bounds;
                     // console.dir(xx);
-                    $this.zoomTo(coords[0][0], coords[0][1], 4);
+                    $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
                 };
                 $this.Container.addChild(Graph);
                 Graphics.push(Graph);
@@ -125,36 +127,40 @@ class Application extends PIXI.Application {
         });
         $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(0, 0).scale(0.1));
         $this.canvas.on("click", () => {
-            const x = (d3.event.x - $this.zoomTrans.x) / $this.zoomTrans.scale;
-            const y = (d3.event.y - $this.zoomTrans.y) / $this.zoomTrans.scale;
+            const x = (d3.event.x - $this.zoomTrans.x) / $this.zoomTrans.k;
+            const y = (d3.event.y - $this.zoomTrans.y) / $this.zoomTrans.k;
         });
     }
     zoomActions($this) {
         const x = d3.event.transform.x;
         const y = d3.event.transform.y;
         const k = d3.event.transform.k;
-        $this.zoomTrans.x = x;
-        $this.zoomTrans.y = y;
-        $this.zoomTrans.scale = k;
+        $this.zoomTrans = d3.event.transform;
         $this.canvas.attr("transform", d3.event.transform);
         $this.Container.scale.set(k);
         $this.Container.position.set(x, y);
     }
-    zoomTo(x, y, k) {
+    zoomTo(x, y, k, graph) {
         const $this = this;
-        console.log(`zoom to ${x} ${y} ==> ${k}`);
-        let tk = d3.interpolateNumber($this.zoomTrans.scale, k);
-        let tx = d3.interpolateNumber(0, x);
-        let ty = d3.interpolateNumber(0, y);
+        // constrain(translate(scale(t0, k1), p0, p1), extent.apply(this, arguments), translateExtent)
+        //var t0 = d3.zoomIdentity;
+        /*var t0 = d3.zoomTransform($this.canvas.node());
+
+        var p0 = [x, y];
+        var p1 = t0.invert(p0);
+        var t = t0.translate(t0.scale($this.zoomHandler, 4),  p0, p1);
+        $this.canvas.call($this.zoomHandler, t);
+         */
+        const trans = d3.zoomTransform($this.canvas.node());
+        const fx = d3.interpolateNumber(x);
+        const fy = d3.interpolateNumber(y);
+        const fk = d3.interpolateNumber(trans.k, k);
         let temp = 0;
         $this.D3Interval = d3.interval(function () {
             if (temp < 1) {
-                temp += 0.01;
-                let k_temp = tk(temp);
-                let x_temp = tx(temp);
-                let y_temp = ty(temp);
-                $this.zoomHandler.scaleTo($this.canvas, k_temp);
-                $this.zoomHandler.translateTo($this.canvas, x, y);
+                temp += 0.005;
+                $this.zoomHandler.scaleBy($this.canvas, fk(temp));
+                $this.zoomHandler.translateBy($this.canvas, fx(x), fy(y));
             }
             else {
                 $this.D3Interval.stop();
@@ -248,11 +254,64 @@ class Application extends PIXI.Application {
         const $this = this;
         return (y - $this.zoomTrans.x) / $this.zoomTrans.scale;
     }
+    resize() {
+        const $this = this;
+        /*window.addEventListener('resize', ()=>{
+            return $this.rendererResize($this);
+        });
+        window.addEventListener('deviceOrientation', ()=>{
+            return $this.rendererResize($this);
+        });*/
+    }
+    ;
+    /**
+     * Calculate the current window size and set the canvas renderer size accordingly
+     */
+    rendererResize($this) {
+        var targetWidth = 1024;
+        var targetHeight = 768;
+        /**
+         * Set the canvas size and display size
+         * This way we can support retina graphics and make our game really crisp
+         */
+        $this.width = $this.width * window.devicePixelRatio;
+        $this.height = $this.height * window.devicePixelRatio;
+        //($this as any ).style.width = width + 'px';
+        //($this as any ).style.height = height + 'px';
+        /**
+         * Resize the PIXI renderer
+         * Let PIXI know that we changed the size of the viewport
+         */
+        let renderer = PIXI.autoDetectRenderer($this.width, $this.height);
+        renderer.resize($this.width, $this.height);
+        /**
+         * Scale the canvas horizontally and vertically keeping in mind the screen estate we have
+         * at our disposal. This keeps the relative game dimensions in place.
+         */
+        if ($this.height / targetHeight < $this.width / targetWidth) {
+            $this.Container.scale.x = $this.height / targetHeight;
+        }
+        else {
+            $this.Container.scale.y = $this.width / targetWidth;
+        }
+        /**
+         * Some sugar
+         * Set the x horizontal center point of the canvas after resizing.
+         * This should be used for engines which calculate object position from anchor 0.5/0.5
+         */
+        $this.Container.pivot.y = -($this.width * (1 / $this.Container.scale.y) / 2) * window.devicePixelRatio;
+        $this.Container.pivot.x = -($this.width * (1 / $this.Container.scale.x) / 2) * window.devicePixelRatio;
+        /**
+         * iOS likes to scroll when rotating - fix that
+         */
+        window.scrollTo(0, 0);
+    }
+    ;
 }
 exports.default = Application;
 window.onload = () => {
     (() => {
-        return new Application("container", 1000, 683);
+        return new Application("container", "100%", "100%");
     })();
 };
 //# sourceMappingURL=App.js.map
