@@ -46,12 +46,12 @@ export default class Application extends PIXI.Application {
         this.widthExtentMaximum = this.width + 10000;
         this.heightExtentMaximum = this.width + 10000;
         this.selector = selectorId;
-        this.appendView(selectorId);
+        this.appendView();
         this.setup();
         this.resize();
     }
 
-    private appendView(selectorId) {
+    private appendView() {
         const $this = this;
         document.getElementById($this.selector).appendChild($this.view);
         $("canvas").addClass('row');
@@ -126,7 +126,7 @@ export default class Application extends PIXI.Application {
                     // console.dir(this);
                     // let xx = this._bounds;
                     // console.dir(xx);
-                    $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
+                    // $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
                 };
                 ($this as any).Container.addChild(Graph);
                 Graphics.push(Graph);
@@ -168,17 +168,8 @@ export default class Application extends PIXI.Application {
         $this.Container.position.set(x, y);
     }
 
-    private zoomTo(x: number, y: number, k: number, graph) {
+    /*private zoomTo(x: number, y: number, k: number, graph) {
         const $this = this;
-        // constrain(translate(scale(t0, k1), p0, p1), extent.apply(this, arguments), translateExtent)
-        //var t0 = d3.zoomIdentity;
-        /*var t0 = d3.zoomTransform($this.canvas.node());
-
-        var p0 = [x, y];
-        var p1 = t0.invert(p0);
-        var t = t0.translate(t0.scale($this.zoomHandler, 4),  p0, p1);
-        $this.canvas.call($this.zoomHandler, t);
-         */
         const trans = d3.zoomTransform($this.canvas.node());
         const fx = d3.interpolateNumber(364, x);
         const fy = d3.interpolateNumber(0, y);
@@ -194,7 +185,7 @@ export default class Application extends PIXI.Application {
                 $this.D3Interval = null;
             }
         }, 1);
-    }
+    }*/
 
     private drawCircle(x, y) {
         const $this = this;
@@ -297,12 +288,9 @@ export default class Application extends PIXI.Application {
             return $this.rendererResize($this);
         });
     };
-    /**
-     * Calculate the current window size and set the canvas renderer size accordingly
-     */
+
     public rendererResize ($this) {
         let {scale, scaleX, scaleY} = scaleToWindow('canvas-container');
-        //$this.Container.scale.set(scale);
     };
 
 
