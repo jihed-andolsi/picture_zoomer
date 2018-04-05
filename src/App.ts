@@ -10,12 +10,14 @@ require("./Assets/jquery-ui-1.12.1/jquery-ui.structure.css");
 
 import * as PIXI from "pixi.js";
 import * as d3 from "d3";
-const sprites = require("./Components/sprites.json");
-const graphics = require("./Components/graphics.json");
 import Button from "./Tools/Button";
 import LoaderText from "./Tools/LoaderText";
 import {scaleToWindow} from "./Tools/Scale";
 import {isMobile} from "./Tools/DeviceDetect";
+
+const sprites = require("./Components/sprites.json");
+const graphics = require("./Components/graphics.json");
+
 let ModalDetail = require("./Components/DetailModal.html");
 let ModalSearch = require("./Components/SearchForm.html");
 let ModalAdd = require("./Components/addModal.html");
@@ -42,7 +44,8 @@ export default class Application extends PIXI.Application {
     private view;
     private stage;
     private zoomHandler;
-    private Graphics;
+    private Graphics = [];
+    private Buttons = [];
     private canvas = null;
     private context = null;
     private widthCanvas = null;
@@ -58,12 +61,11 @@ export default class Application extends PIXI.Application {
         this.width = width;
         this.height = height;
         this.widthExtentMaximum = this.width + 10000;
-        this.heightExtentMaximum = this.width + 10000;
+        this.heightExtentMaximum = this.height + 10000;
         this.selector = selectorId;
         this.isMobile = isMobile();
         this.appendView();
         this.setup();
-        this.resize();
     }
 
     private appendView() {
@@ -84,7 +86,7 @@ export default class Application extends PIXI.Application {
     private setup() {
         const $this = this;
         const s = {};
-        const text = new LoaderText($this.width, $this.height);
+        const text = new LoaderText(($this as any).width, ($this as any).height);
 
         $this.stage.addChild(text);
 
@@ -112,13 +114,16 @@ export default class Application extends PIXI.Application {
             $this.addGraphics();
             $this.initZoomAction();
             //let colorMatrix = new PIXI.ColorMatrixFilter();
-
             //colorMatrix.contrast(2);
+            $this.resizeCanvas();
         });
     }
 
     private addBackground() {
         const $this = this;
+        if(($this.sprites as any).background.interactive){
+            $this.Container.removeChild(($this.sprites as any).background)
+        }
         ($this.sprites as any).background.x = 0;
         ($this.sprites as any).background.y = 0;
         ($this.sprites as any).background.interactive = true;
@@ -143,7 +148,10 @@ export default class Application extends PIXI.Application {
 
     private addSearchButton() {
         const $this = this;
-        ($this.sprites as any).searchIcon.x = $this.width - 150;
+        /*if(($this.sprites as any).searchIcon.interactive){
+            $this.ContainerButtons.removeChild(($this.sprites as any).searchIcon)
+        }*/
+        ($this.sprites as any).searchIcon.x = ($this as any).width - 150;
         ($this.sprites as any).searchIcon.y = 50;
         ($this.sprites as any).searchIcon.width = 100;
         ($this.sprites as any).searchIcon.height = 100;
@@ -157,6 +165,7 @@ export default class Application extends PIXI.Application {
             } else {
                 mo = $(ModalSearch);
             }
+            $(ModalSearch).attr('data-initilized', 'true');
             mo.modal({show: true}).on("shown.bs.modal", function (e) {
                 $(this).find('form').submit(function () {
                     let data = $(this).serializeArray();
@@ -292,16 +301,24 @@ export default class Application extends PIXI.Application {
             }).filter(() => {
                 return !$this.D3Interval;
             });
-
-        const initX = 0;
-        const initY = -100;
-        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(initX, initY).scale(.1));
+        $this.initZommActionFunctionalities();
+    }
+    private initZommActionFunctionalities(){
+        const $this = this;
+        let initX = 0;
+        let initY = -100;
+        let scalInit = .1;
+        if(isMobile()){
+            scalInit = .5;
+            initY = - $this.height / 2;
+            initX = - $this.width / 2;
+        }
+        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(initX, initY).scale(scalInit));
         $this.canvas.on("click", () => {
             // const x = (d3.event.x - $this.zoomTrans.x) / $this.zoomTrans.k;
             // const y = (d3.event.y - $this.zoomTrans.y) / $this.zoomTrans.k;
         });
     }
-
     private zoomActions($this) {
         const x = d3.event.transform.x;
         const y = d3.event.transform.y;
@@ -378,10 +395,16 @@ export default class Application extends PIXI.Application {
 
     private addButtons() {
         const $this = this;
+        if($this.Buttons.length){
+            $this.Buttons.map((e) => {
+                $this.ContainerButtons.removeChild(e);
+            })
+            $this.Buttons = [];
+        }
         let width = 150;
         let height = 50;
         let x = 10;
-        let y = $this.height - height - 20;
+        let y = ($this as any).height - height - 20;
         const b = new Button(width, height, x, y, "Start drawing", null);
         $this.ContainerButtons.addChild(b);
         $this.stage.addChild($this.ContainerButtons);
@@ -396,10 +419,11 @@ export default class Application extends PIXI.Application {
                 (b as any).text.text = "Stop drawing";
             }
         });
+        $this.Buttons.push(b);
         width = 250;
         height = 50;
         x = 170;
-        y = $this.height - height - 20;
+        y = ($this as any).height - height - 20;
         const returnLastActionB = new Button(width, height, x, y, "Return to last action", null);
         $this.ContainerButtons.addChild(returnLastActionB);
         (returnLastActionB as any).on("click", () => {
@@ -412,7 +436,7 @@ export default class Application extends PIXI.Application {
                 }
             }
         });
-
+        $this.Buttons.push(returnLastActionB);
     }
 
     public getD3X(x: number) {
@@ -425,19 +449,45 @@ export default class Application extends PIXI.Application {
         return (y - $this.zoomTrans.y) / $this.zoomTrans.k;
     }
 
-    public resize() {
-        /*const $this = this;
+    public resizeCanvas() {
+        const $this = this;
         $this.rendererResize($this);
         window.addEventListener('resize', () => {
             return $this.rendererResize($this);
         });
         window.addEventListener('deviceOrientation', () => {
             return $this.rendererResize($this);
-        });*/
+        });
     };
 
     public rendererResize($this) {
-        let {scale, scaleX, scaleY} = scaleToWindow('canvas-container');
+        if(isMobile()){
+            $this.width = window.innerWidth;
+            $this.height = window.innerHeight;
+        }
+        let ratio = Math.min(window.innerWidth/$this.width,
+            window.innerHeight/$this.height);
+        if(ratio >1){
+            ratio = 1;
+        }
+        $this.Container.scale.x =
+            $this.Container.scale.y =
+                $this.ContainerButtons.scale.x =
+                    $this.ContainerButtons.scale.y = ratio;
+        ($this.sprites as any).searchIcon.x = ($this as any).width - 150;
+        ($this.sprites as any).searchIcon.y = 50;
+        $this.addButtons();
+
+
+        // Update the renderer dimensions
+        let width = Math.ceil($this.width * ratio);
+        let height = Math.ceil($this.height * ratio);
+        /*if(window.innerWidth > window.innerHeight && isMobile()){
+            [width, height] = [height, width];
+        }*/
+        $this.renderer.resize(width, height);
+        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate($this.zoomTrans.x, $this.zoomTrans.y).scale($this.zoomTrans.k));
+
     };
 
 
@@ -462,6 +512,13 @@ export default class Application extends PIXI.Application {
 
 window.onload = () => {
     (() => {
-        return new Application("container", 1140, 684);
+        let [width, height] = [960, 540];
+        if(isMobile()){
+            [width, height] = [window.innerWidth, window.innerHeight];
+            if(width > height){
+                [width, height] = [height, width];
+            }
+        }
+        return new Application("container", width, height);
     })();
 };
