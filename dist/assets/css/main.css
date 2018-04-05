@@ -1,3 +1,12 @@
 .tooltip-hidden .ui-tooltip{
     display: none !important;
 }
+
+#container, #container canvas{
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    margin: auto !important;
+    position: absolute;
+}

@@ -43038,15 +43038,14 @@ __webpack_require__(/*! ./Assets/jquery-ui-1.12.1/jquery-ui.theme.css */ 282);
 __webpack_require__(/*! ./Assets/jquery-ui-1.12.1/jquery-ui.structure.css */ 284);
 const PIXI = __webpack_require__(/*! pixi.js */ 75);
 const d3 = __webpack_require__(/*! d3 */ 387);
-const sprites = __webpack_require__(/*! ./Components/sprites.json */ 679);
-const graphics = __webpack_require__(/*! ./Components/graphics.json */ 680);
-const Button_1 = __webpack_require__(/*! ./Tools/Button */ 681);
-const LoaderText_1 = __webpack_require__(/*! ./Tools/LoaderText */ 682);
-const Scale_1 = __webpack_require__(/*! ./Tools/Scale */ 683);
-const DeviceDetect_1 = __webpack_require__(/*! ./Tools/DeviceDetect */ 684);
-let ModalDetail = __webpack_require__(/*! ./Components/DetailModal.html */ 686);
-let ModalSearch = __webpack_require__(/*! ./Components/SearchForm.html */ 687);
-let ModalAdd = __webpack_require__(/*! ./Components/addModal.html */ 688);
+const Button_1 = __webpack_require__(/*! ./Tools/Button */ 679);
+const LoaderText_1 = __webpack_require__(/*! ./Tools/LoaderText */ 680);
+const DeviceDetect_1 = __webpack_require__(/*! ./Tools/DeviceDetect */ 681);
+const sprites = __webpack_require__(/*! ./Components/sprites.json */ 683);
+const graphics = __webpack_require__(/*! ./Components/graphics.json */ 684);
+let ModalDetail = __webpack_require__(/*! ./Components/DetailModal.html */ 685);
+let ModalSearch = __webpack_require__(/*! ./Components/SearchForm.html */ 686);
+let ModalAdd = __webpack_require__(/*! ./Components/addModal.html */ 687);
 // import * as filters from 'pixi-filters';
 class Application extends PIXI.Application {
     constructor(selectorId, width, height) {
@@ -43062,6 +43061,8 @@ class Application extends PIXI.Application {
         this.startDrawing = false;
         this.backgroundClicked = false;
         this.sprites = {};
+        this.Graphics = [];
+        this.Buttons = [];
         this.canvas = null;
         this.context = null;
         this.widthCanvas = null;
@@ -43074,12 +43075,11 @@ class Application extends PIXI.Application {
         this.width = width;
         this.height = height;
         this.widthExtentMaximum = this.width + 10000;
-        this.heightExtentMaximum = this.width + 10000;
+        this.heightExtentMaximum = this.height + 10000;
         this.selector = selectorId;
         this.isMobile = DeviceDetect_1.isMobile();
         this.appendView();
         this.setup();
-        this.resize();
     }
     appendView() {
         const $this = this;
@@ -43125,10 +43125,14 @@ class Application extends PIXI.Application {
             $this.initZoomAction();
             //let colorMatrix = new PIXI.ColorMatrixFilter();
             //colorMatrix.contrast(2);
+            $this.resizeCanvas();
         });
     }
     addBackground() {
         const $this = this;
+        if ($this.sprites.background.interactive) {
+            $this.Container.removeChild($this.sprites.background);
+        }
         $this.sprites.background.x = 0;
         $this.sprites.background.y = 0;
         $this.sprites.background.interactive = true;
@@ -43151,6 +43155,9 @@ class Application extends PIXI.Application {
     }
     addSearchButton() {
         const $this = this;
+        /*if(($this.sprites as any).searchIcon.interactive){
+            $this.ContainerButtons.removeChild(($this.sprites as any).searchIcon)
+        }*/
         $this.sprites.searchIcon.x = $this.width - 150;
         $this.sprites.searchIcon.y = 50;
         $this.sprites.searchIcon.width = 100;
@@ -43166,6 +43173,7 @@ class Application extends PIXI.Application {
             else {
                 mo = $(ModalSearch);
             }
+            $(ModalSearch).attr('data-initilized', 'true');
             mo.modal({ show: true }).on("shown.bs.modal", function (e) {
                 $(this).find('form').submit(function () {
                     let data = $(this).serializeArray();
@@ -43298,9 +43306,19 @@ class Application extends PIXI.Application {
         }).filter(() => {
             return !$this.D3Interval;
         });
-        const initX = 0;
-        const initY = -100;
-        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(initX, initY).scale(.1));
+        $this.initZommActionFunctionalities();
+    }
+    initZommActionFunctionalities() {
+        const $this = this;
+        let initX = 0;
+        let initY = -100;
+        let scalInit = .1;
+        if (DeviceDetect_1.isMobile()) {
+            scalInit = .5;
+            initY = -$this.height / 2;
+            initX = -$this.width / 2;
+        }
+        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(initX, initY).scale(scalInit));
         $this.canvas.on("click", () => {
             // const x = (d3.event.x - $this.zoomTrans.x) / $this.zoomTrans.k;
             // const y = (d3.event.y - $this.zoomTrans.y) / $this.zoomTrans.k;
@@ -43378,6 +43396,12 @@ class Application extends PIXI.Application {
     }
     addButtons() {
         const $this = this;
+        if ($this.Buttons.length) {
+            $this.Buttons.map((e) => {
+                $this.ContainerButtons.removeChild(e);
+            });
+            $this.Buttons = [];
+        }
         let width = 150;
         let height = 50;
         let x = 10;
@@ -43397,6 +43421,7 @@ class Application extends PIXI.Application {
                 b.text.text = "Stop drawing";
             }
         });
+        $this.Buttons.push(b);
         width = 250;
         height = 50;
         x = 170;
@@ -43413,6 +43438,7 @@ class Application extends PIXI.Application {
                 }
             }
         });
+        $this.Buttons.push(returnLastActionB);
     }
     getD3X(x) {
         const $this = this;
@@ -43422,19 +43448,41 @@ class Application extends PIXI.Application {
         const $this = this;
         return (y - $this.zoomTrans.y) / $this.zoomTrans.k;
     }
-    resize() {
-        /*const $this = this;
+    resizeCanvas() {
+        const $this = this;
         $this.rendererResize($this);
         window.addEventListener('resize', () => {
             return $this.rendererResize($this);
         });
         window.addEventListener('deviceOrientation', () => {
             return $this.rendererResize($this);
-        });*/
+        });
     }
     ;
     rendererResize($this) {
-        let { scale, scaleX, scaleY } = Scale_1.scaleToWindow('canvas-container');
+        if (DeviceDetect_1.isMobile()) {
+            $this.width = window.innerWidth;
+            $this.height = window.innerHeight;
+        }
+        let ratio = Math.min(window.innerWidth / $this.width, window.innerHeight / $this.height);
+        if (ratio > 1) {
+            ratio = 1;
+        }
+        $this.Container.scale.x =
+            $this.Container.scale.y =
+                $this.ContainerButtons.scale.x =
+                    $this.ContainerButtons.scale.y = ratio;
+        $this.sprites.searchIcon.x = $this.width - 150;
+        $this.sprites.searchIcon.y = 50;
+        $this.addButtons();
+        // Update the renderer dimensions
+        let width = Math.ceil($this.width * ratio);
+        let height = Math.ceil($this.height * ratio);
+        /*if(window.innerWidth > window.innerHeight && isMobile()){
+            [width, height] = [height, width];
+        }*/
+        $this.renderer.resize(width, height);
+        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate($this.zoomTrans.x, $this.zoomTrans.y).scale($this.zoomTrans.k));
     }
     ;
     removeColorFromSprite(sprite) {
@@ -43455,7 +43503,14 @@ class Application extends PIXI.Application {
 exports.default = Application;
 window.onload = () => {
     (() => {
-        return new Application("container", 1140, 684);
+        let [width, height] = [960, 540];
+        if (DeviceDetect_1.isMobile()) {
+            [width, height] = [window.innerWidth, window.innerHeight];
+            if (width > height) {
+                [width, height] = [height, width];
+            }
+        }
+        return new Application("container", width, height);
     })();
 };
 
@@ -43703,7 +43758,7 @@ exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loa
 
 
 // module
-exports.push([module.i, ".tooltip-hidden .ui-tooltip{\r\n    display: none !important;\r\n}", ""]);
+exports.push([module.i, ".tooltip-hidden .ui-tooltip{\r\n    display: none !important;\r\n}\r\n\r\n#container, #container canvas{\r\n    top: 0;\r\n    bottom: 0;\r\n    right: 0;\r\n    left: 0;\r\n    margin: auto !important;\r\n    position: absolute;\r\n}", ""]);
 
 // exports
 
@@ -105603,28 +105658,6 @@ function nopropagation() {
 
 /***/ }),
 /* 679 */
-/*!*************************************!*\
-  !*** ./src/Components/sprites.json ***!
-  \*************************************/
-/*! dynamic exports provided */
-/*! all exports used */
-/***/ (function(module, exports) {
-
-module.exports = [{"name":"background","url":"./assets/pictures/gfh.jpg","x":0,"y":0},{"name":"searchIcon","url":"./assets/pictures/serach-icon.png","x":0,"y":0}]
-
-/***/ }),
-/* 680 */
-/*!**************************************!*\
-  !*** ./src/Components/graphics.json ***!
-  \**************************************/
-/*! dynamic exports provided */
-/*! all exports used */
-/***/ (function(module, exports) {
-
-module.exports = [{"color":"0x0000ff","opacity":"0.5","lineSize":"1","coords":[[4196,4501],[4241,4486],[4266,4556],[4221,4571]],"info":{"title":"bien 1","description":"kablam kablam kablam ","pieces":"S+1","surface":"150"}},{"color":"0x0000ff","opacity":"0.5","lineSize":"1","coords":[[4359.6049459148635,4527.450139703904],[4335.39275837319,4456.173812334034],[4381.912804099327,4440.123036323262],[4405.85294458997,4513.303693050341]],"info":{"title":"bien 2","description":"kablam kablam kablam ","pieces":"S+2","surface":"250"}},{"color":"0x0000ff","opacity":"0.5","lineSize":"1","coords":[[4428.60277457257,4425.672054001836],[4473.548512783272,4410.209070672467],[4497.876939888147,4481.1326208765095],[4451.900336122154,4496.595604205879]],"info":{"title":"bien 3","description":"kablam kablam kablam ","pieces":"S+3","surface":"400"}}]
-
-/***/ }),
-/* 681 */
 /*!*****************************!*\
   !*** ./src/Tools/Button.ts ***!
   \*****************************/
@@ -105673,7 +105706,7 @@ exports.default = Button;
 
 
 /***/ }),
-/* 682 */
+/* 680 */
 /*!*********************************!*\
   !*** ./src/Tools/LoaderText.ts ***!
   \*********************************/
@@ -105703,96 +105736,7 @@ exports.default = LoaderText;
 
 
 /***/ }),
-/* 683 */
-/*!****************************!*\
-  !*** ./src/Tools/Scale.ts ***!
-  \****************************/
-/*! dynamic exports provided */
-/*! all exports used */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * Created by Andolsi on 02/04/2018.
- */
-exports.scaleToWindow = (canvas_selector) => {
-    var scaleX, scaleY, scale, center;
-    let canvas = document.getElementById(canvas_selector);
-    //1. Scale the canvas to the correct size
-    //Figure out the scale amount on each axis
-    scaleX = window.innerWidth / canvas.offsetWidth;
-    scaleY = window.innerHeight / canvas.offsetHeight;
-    //Scale the canvas based on whichever value is less: `scaleX` or `scaleY`
-    scale = Math.min(scaleX, scaleY);
-    canvas.style.transformOrigin = "0 0";
-    canvas.style.transform = "scale(" + scale + ")";
-    canvas = document.getElementById(canvas_selector);
-    canvas.width = document.getElementById('container').offsetWidth;
-    canvas.height = document.getElementById('container').offsetHeight;
-    if (canvas.offsetWidth > canvas.offsetHeight) {
-        if (canvas.offsetWidth * scale < window.innerWidth) {
-            center = "horizontally";
-        }
-        else {
-            center = "vertically";
-        }
-    }
-    else {
-        if (canvas.offsetHeight * scale < window.innerHeight) {
-            center = "vertically";
-        }
-        else {
-            center = "horizontally";
-        }
-    }
-    /*var margin;
-     if (center === "horizontally") {
-     margin = (window.innerWidth - canvas.offsetWidth * scale) / 2;
-     canvas.style.marginTop = 0 + "px";
-     canvas.style.marginBottom = 0 + "px";
-     canvas.style.marginLeft = margin + "px";
-     canvas.style.marginRight = margin + "px";
-     }
-
-     //Center vertically (for wide canvases)
-     if (center === "vertically") {
-     margin = (window.innerHeight - canvas.offsetHeight * scale) / 2;
-     canvas.style.marginTop = margin + "px";
-     canvas.style.marginBottom = margin + "px";
-     canvas.style.marginLeft = 0 + "px";
-     canvas.style.marginRight = 0 + "px";
-     }*/
-    // 3. Remove any padding from the canvas  and body and set the canvas
-    // display style to "block"
-    canvas.style.paddingLeft = 0 + "px";
-    canvas.style.paddingRight = 0 + "px";
-    canvas.style.paddingTop = 0 + "px";
-    canvas.style.paddingBottom = 0 + "px";
-    canvas.style.display = "block";
-    // 4. Set the color of the HTML body background
-    // document.body.style.backgroundColor = backgroundColor;
-    // Fix some quirkiness in scaling for Safari
-    var ua = navigator.userAgent.toLowerCase();
-    if (ua.indexOf("safari") != -1) {
-        if (ua.indexOf("chrome") > -1) {
-            // Chrome
-        }
-        else {
-            // Safari
-            // canvas.style.maxHeight = "100%";
-            // canvas.style.minHeight = "100%";
-        }
-    }
-    // 5. Return the `scale` value. This is important, because you'll need this value
-    // for correct hit testing between the pointer and sprites
-    return { scale, scaleX, scaleY };
-};
-
-
-/***/ }),
-/* 684 */
+/* 681 */
 /*!***********************************!*\
   !*** ./src/Tools/DeviceDetect.ts ***!
   \***********************************/
@@ -105806,7 +105750,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * Created by Andolsi on 04/04/2018.
  */
-exports.deviceDetect = __webpack_require__(/*! device-detect */ 685)();
+exports.deviceDetect = __webpack_require__(/*! device-detect */ 682)();
 exports.isMobile = () => {
     const mobileListDevices = ['iPhone', 'iPad', 'iPod', 'Blackberry', 'WindowsMobile', 'Android'];
     let deviceDetectValue = exports.deviceDetect.device;
@@ -105819,7 +105763,7 @@ exports.isMobile = () => {
 
 
 /***/ }),
-/* 685 */
+/* 682 */
 /*!*********************************************!*\
   !*** ./node_modules/device-detect/index.js ***!
   \*********************************************/
@@ -105878,7 +105822,29 @@ module.exports = function (){
 
 
 /***/ }),
-/* 686 */
+/* 683 */
+/*!*************************************!*\
+  !*** ./src/Components/sprites.json ***!
+  \*************************************/
+/*! dynamic exports provided */
+/*! all exports used */
+/***/ (function(module, exports) {
+
+module.exports = [{"name":"background","url":"./assets/pictures/gfh.jpg","x":0,"y":0},{"name":"searchIcon","url":"./assets/pictures/serach-icon.png","x":0,"y":0}]
+
+/***/ }),
+/* 684 */
+/*!**************************************!*\
+  !*** ./src/Components/graphics.json ***!
+  \**************************************/
+/*! dynamic exports provided */
+/*! all exports used */
+/***/ (function(module, exports) {
+
+module.exports = [{"color":"0x0000ff","opacity":"0.5","lineSize":"1","coords":[[4196,4501],[4241,4486],[4266,4556],[4221,4571]],"info":{"title":"bien 1","description":"kablam kablam kablam ","pieces":"S+1","surface":"150"}},{"color":"0x0000ff","opacity":"0.5","lineSize":"1","coords":[[4359.6049459148635,4527.450139703904],[4335.39275837319,4456.173812334034],[4381.912804099327,4440.123036323262],[4405.85294458997,4513.303693050341]],"info":{"title":"bien 2","description":"kablam kablam kablam ","pieces":"S+2","surface":"250"}},{"color":"0x0000ff","opacity":"0.5","lineSize":"1","coords":[[4428.60277457257,4425.672054001836],[4473.548512783272,4410.209070672467],[4497.876939888147,4481.1326208765095],[4451.900336122154,4496.595604205879]],"info":{"title":"bien 3","description":"kablam kablam kablam ","pieces":"S+3","surface":"400"}}]
+
+/***/ }),
+/* 685 */
 /*!*****************************************!*\
   !*** ./src/Components/DetailModal.html ***!
   \*****************************************/
@@ -105889,7 +105855,7 @@ module.exports = function (){
 module.exports = "<div class=\"modal fade\" tabindex=-1 role=dialog aria-labelledby=exampleModalLabel aria-hidden=true>\r\n    <div class=modal-dialog role=document>\r\n        <div class=modal-content>\r\n            <div class=modal-header>\r\n                <h5 class=modal-title>Error !</h5>\r\n                <button type=button class=close data-dismiss=modal aria-label=Close>\r\n                    <span aria-hidden=true>&times;</span>\r\n                </button>\r\n            </div>\r\n            <div class=modal-body>\r\n                <p class=description>Error !</p>\r\n            </div>\r\n            <div class=modal-footer>\r\n                <button type=button class=\"btn btn-secondary\" data-dismiss=modal>Close</button>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</div>";
 
 /***/ }),
-/* 687 */
+/* 686 */
 /*!****************************************!*\
   !*** ./src/Components/SearchForm.html ***!
   \****************************************/
@@ -105900,7 +105866,7 @@ module.exports = "<div class=\"modal fade\" tabindex=-1 role=dialog aria-labelle
 module.exports = "<div class=\"modal fade search-modal\" tabindex=-1 role=dialog aria-labelledby=exampleModalLabel aria-hidden=true>\r\n    <div class=modal-dialog role=document>\r\n        <div class=modal-content>\r\n            <form action=# onsubmit=return!1>\r\n                <div class=modal-header>\r\n                    <h5 class=modal-title>Search</h5>\r\n                    <button type=button class=close data-dismiss=modal aria-label=Close>\r\n                        <span aria-hidden=true>&times;</span>\r\n                    </button>\r\n                </div>\r\n                <div class=modal-body>\r\n                    <div class=form-group>\r\n                        <label for=chambres class=col-form-label>Chambres:</label>\r\n                        <select name=pieces class=\"custom-select custom-select-lg mb-3\" id=chambres>\r\n                            <option selected=selected value=\"\">Chambres</option>\r\n                            <option value=1>S+1</option>\r\n                            <option value=2>S+2</option>\r\n                            <option value=3>S+3</option>\r\n                        </select>\r\n                    </div>\r\n                    <div class=form-group>\r\n                        <label for=superficie class=col-form-label>Superficie:</label>\r\n                        <select name=surface class=\"custom-select custom-select-lg mb-3\" id=superficie>\r\n                            <option selected=selected value=\"\">Superficie</option>\r\n                            <option value=1>100 => 200</option>\r\n                            <option value=2>200 => 300</option>\r\n                            <option value=3>300 +</option>\r\n                        </select>\r\n                    </div>\r\n                </div>\r\n                <div class=modal-footer>\r\n                    <button type=button class=\"btn btn-secondary\" data-dismiss=modal>Close</button>\r\n                    <button type=submit class=\"btn btn-primary\">Search</button>\r\n                </div>\r\n            </form>\r\n        </div>\r\n    </div>\r\n</div>";
 
 /***/ }),
-/* 688 */
+/* 687 */
 /*!**************************************!*\
   !*** ./src/Components/addModal.html ***!
   \**************************************/
