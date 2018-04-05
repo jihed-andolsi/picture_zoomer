@@ -1,4 +1,5 @@
 var path = require('path');
+var webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 
@@ -12,7 +13,11 @@ module.exports = {
 
     resolve: {
         // add '.ts' as resolvable extensions
-        extensions: ['.js', '.ts', '.json', '.scss']
+        extensions: ['.js', '.ts', '.json', '.scss', '.css', '/\.(gif|png|jpe?g|svg)$/i', '.html'],
+        alias: {
+            'jquery': __dirname + '/src/Assets/jquery-ui-1.12.1/external/jquery/jquery.js',
+            'jquery-ui': __dirname + '/src/Assets/jquery-ui-1.12.1/jquery-ui.js',
+        }
     },
     devtool: 'source-map',
     plugins: [
@@ -29,6 +34,10 @@ module.exports = {
         new HtmlWebpackPlugin({
             template: './index.html',
             inject: 'body'
+        }),
+        new webpack.optimize.UglifyJsPlugin({
+            include: /\.min\.js$/,
+            minimize: true
         })
     ],
 
@@ -59,6 +68,36 @@ module.exports = {
                 }, {
                     loader: 'sass-loader' // compiles Sass to CSS
                 }]
+            },
+            {
+                test: /\.css$/,
+                use: [
+                    { loader: "style-loader" },
+                    { loader: "css-loader" }
+                ]
+            },
+            {
+                test: /\.(gif|png|jpe?g|svg)$/i,
+                use: [
+                    'file-loader',
+                    {
+                        loader: 'image-webpack-loader',
+                        options: {
+                            bypassOnDebug: true,
+                        },
+                    },
+                ],
+            },
+            {
+                test: /\.html$/,
+                use: [ {
+                    loader: 'html-loader',
+                    options: {
+                        minimize: true,
+                        removeComments: false,
+                        collapseWhitespace: false
+                    }
+                }],
             }
           ]
     }

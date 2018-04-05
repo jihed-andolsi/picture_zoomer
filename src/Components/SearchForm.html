@@ -1,0 +1,38 @@
+<div class="modal fade search-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form action="#" onsubmit="return false;">
+                <div class="modal-header">
+                    <h5 class="modal-title">Search</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="chambres" class="col-form-label">Chambres:</label>
+                        <select name="pieces" class="custom-select custom-select-lg mb-3" id="chambres">
+                            <option selected value="">Chambres</option>
+                            <option value="1">S+1</option>
+                            <option value="2">S+2</option>
+                            <option value="3">S+3</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="superficie" class="col-form-label">Superficie:</label>
+                        <select name="surface" class="custom-select custom-select-lg mb-3" id="superficie">
+                            <option selected value="">Superficie</option>
+                            <option value="1">100 => 200</option>
+                            <option value="2">200 => 300</option>
+                            <option value="3">300 +</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

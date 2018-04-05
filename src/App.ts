@@ -1,12 +1,24 @@
+require("./Assets/css/_custom.scss");
+require("./Assets/css/main.css");
+let $ = require("jquery");
+(window as any).jQuery = (window as any).$ = $;
+require("bootstrap");
+require("jquery-ui");
+require("./Assets/jquery-ui-1.12.1/jquery-ui.css");
+require("./Assets/jquery-ui-1.12.1/jquery-ui.theme.css");
+require("./Assets/jquery-ui-1.12.1/jquery-ui.structure.css");
+
 import * as PIXI from "pixi.js";
 import * as d3 from "d3";
 const sprites = require("./Components/sprites.json");
 const graphics = require("./Components/graphics.json");
 import Button from "./Tools/Button";
 import LoaderText from "./Tools/LoaderText";
-require("./Assets/css/_custom.scss");
-var $ = require("jquery");
 import {scaleToWindow} from "./Tools/Scale";
+import {isMobile} from "./Tools/DeviceDetect";
+let ModalDetail = require("./Components/DetailModal.html");
+let ModalSearch = require("./Components/SearchForm.html");
+// import * as filters from 'pixi-filters';
 
 export default class Application extends PIXI.Application {
     private Customloader = new PIXI.loaders.Loader();
@@ -18,12 +30,13 @@ export default class Application extends PIXI.Application {
     private heightExtentMaximum: number;
     private selector;
     private newGraphic = [];
-    private counterGraphic: number = 0;
+    private _counterGraphic: number = 0;
     private newGraphicObj = [];
     private Circls = [];
     private zoomTrans = null;
     private startDrawing: boolean = false;
     private backgroundClicked: boolean = false;
+    private sprites: object = {};
     // private zoomToBool: boolean = false;
     private view;
     private stage;
@@ -36,6 +49,7 @@ export default class Application extends PIXI.Application {
     private widthCanvas = null;
     private heightCanvas = null;
     private D3Interval = null;
+    private isMobile: boolean = false;
 
     constructor(selectorId, width, height) {
         super(width, height, {transparent: true, autoResize: true});
@@ -46,6 +60,7 @@ export default class Application extends PIXI.Application {
         this.widthExtentMaximum = this.width + 10000;
         this.heightExtentMaximum = this.width + 10000;
         this.selector = selectorId;
+        this.isMobile = isMobile();
         this.appendView();
         this.setup();
         this.resize();
@@ -57,6 +72,13 @@ export default class Application extends PIXI.Application {
         $("canvas").addClass('row');
         $("canvas").attr('id', 'canvas-container');
         $("canvas").css('margin', '0');
+        $("canvas").attr('title', ' ');
+        $(document).tooltip({
+            track: true,
+            context: function () {
+                return ' ';
+            },
+        });
     }
 
     private setup() {
@@ -74,7 +96,7 @@ export default class Application extends PIXI.Application {
         // loader.use(parsingMiddleware);
         $this.Customloader.load((loader, resources) => {
             Object.keys(resources).map((e) => {
-                s[e] = new PIXI.Sprite(resources[e].texture);
+                this.sprites[e] = new PIXI.Sprite(resources[e].texture);
             });
         });
         ($this as any ).Customloader.onProgress.add((e) => {
@@ -84,32 +106,75 @@ export default class Application extends PIXI.Application {
         // $this.Customloader.onLoad.add(() => { }); // called once per loaded file
         $this.Customloader.onComplete.add((e) => {
             $this.stage.removeChild(text);
-            (s as any).background.x = 0;
-            (s as any).background.y = 0;
-            (s as any).background.interactive = true;
-            (s as any).background.on("pointerdown", (e) => {
-                const x = $this.getD3X(e.data.global.x);
-                const y = $this.getD3Y(e.data.global.y);
-                if ($this.startDrawing) {
-                    $this.newGraphic.push([x, y]);
-                    $this.Container.removeChild($this.newGraphicObj[$this.counterGraphic]);
-                    $this.newGraphicObj[$this.counterGraphic] = $this.createGraph($this.newGraphic);
-                    $this.Container.addChild($this.newGraphicObj[$this.counterGraphic]);
-                }
-
-                $this.backgroundClicked = true;
-            });
-            $this.Container.addChild((s as any).background);
+            $this.addBackground();
+            $this.addSearchButton();
             $this.addButtons();
             $this.addGraphics();
             $this.initZoomAction();
+            //let colorMatrix = new PIXI.ColorMatrixFilter();
+
+            //colorMatrix.contrast(2);
         });
+    }
+
+    private addBackground() {
+        const $this = this;
+        ($this.sprites as any).background.x = 0;
+        ($this.sprites as any).background.y = 0;
+        ($this.sprites as any).background.interactive = true;
+        // const filter = new filters.ColorMatrixFilter();
+        //$this.removeColorFromSprite(($this.sprites as any).background);
+        ($this.sprites as any).background.on("pointerdown", (e) => {
+            const x = $this.getD3X(e.data.global.x);
+            const y = $this.getD3Y(e.data.global.y);
+            if ($this.startDrawing) {
+                $this.newGraphic.push([x, y]);
+                $this.Container.removeChild($this.newGraphicObj[$this._counterGraphic]);
+                $this.newGraphicObj[$this._counterGraphic] = $this.createGraph($this.newGraphic);
+                $this.Container.addChild($this.newGraphicObj[$this._counterGraphic]);
+            }
+            $this.backgroundClicked = true;
+        });
+        $this.Container.addChild(($this.sprites as any).background);
+    }
+
+    private addSearchButton() {
+        const $this = this;
+        ($this.sprites as any).searchIcon.x = $this.width - 150;
+        ($this.sprites as any).searchIcon.y = 50;
+        ($this.sprites as any).searchIcon.width = 100;
+        ($this.sprites as any).searchIcon.height = 100;
+        ($this.sprites as any).searchIcon.interactive = true;
+        // let filter = new PIXI.filters.OutlineFilter(2, 0x99ff99);
+        // ($this.sprites as any).searchIcon.filters = [filter];
+        ($this.sprites as any).searchIcon.on("pointerdown", (e) => {
+            let mo = null;
+            if ($('.modal.search-modal').length) {
+                mo = $('.modal.search-modal');
+            } else {
+                mo = $(ModalSearch);
+            }
+            mo.modal({show: true}).on("shown.bs.modal", function (e) {
+                $(this).find('form').submit(function () {
+                    let data = $(this).serializeArray();
+                    data = data.filter((e) => e.value);
+                    if(data.length){
+                        $this.removeColorFromSprite(($this.sprites as any).background);
+                    } else {
+                        $this.removeFiltersFromSprite(($this.sprites as any).background);
+                    }
+                });
+            }).on("hidden.bs.modal", function (e) {
+                // $(this).remove();
+            });
+        });
+        $this.ContainerButtons.addChild(($this.sprites as any).searchIcon);
     }
 
     private addGraphics() {
         const $this = this;
         const Graphics = [];
-        graphics.forEach((G) => {
+        graphics.forEach((G, k) => {
             const coords = G.coords;
             const Graph = $this.createGraph(coords);
             if (Graph) {
@@ -117,9 +182,13 @@ export default class Application extends PIXI.Application {
                 (Graph as any).alpha = 0;
                 (Graph as any).mouseover = function () {
                     (this as any).alpha = 1;
+                    $(document).tooltip("option", "content", "<h1>" + G.info.title + "</h1><p>" + G.info.description + "</p>");
+                    $('body').removeClass('tooltip-hidden');
                 };
                 (Graph as any).mouseout = function () {
                     (this as any).alpha = 0;
+                    $(document).tooltip("option", "content", ' ');
+                    $('body').addClass('tooltip-hidden');
                 };
 
                 (Graph as any).pointerdown = function (e) {
@@ -127,6 +196,15 @@ export default class Application extends PIXI.Application {
                     // let xx = this._bounds;
                     // console.dir(xx);
                     // $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
+                    $(ModalDetail).modal({show: true}).on("shown.bs.modal", function (e) {
+                        $(this).find(".modal-title").html(G.info.title);
+                        $(this).find(".description").html(G.info.description);
+                    }).on("hidden.bs.modal", function (e) {
+                        $(this).remove();
+                    });
+                    if ($this.isMobile) {
+
+                    }
                 };
                 ($this as any).Container.addChild(Graph);
                 Graphics.push(Graph);
@@ -150,7 +228,7 @@ export default class Application extends PIXI.Application {
             }).filter(() => {
                 return !$this.D3Interval;
             });
-        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(364,0).scale(0.1));
+        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(364, 0).scale(0.1));
         $this.canvas.on("click", () => {
             const x = (d3.event.x - $this.zoomTrans.x) / $this.zoomTrans.k;
             const y = (d3.event.y - $this.zoomTrans.y) / $this.zoomTrans.k;
@@ -169,23 +247,23 @@ export default class Application extends PIXI.Application {
     }
 
     /*private zoomTo(x: number, y: number, k: number, graph) {
-        const $this = this;
-        const trans = d3.zoomTransform($this.canvas.node());
-        const fx = d3.interpolateNumber(364, x);
-        const fy = d3.interpolateNumber(0, y);
-        const fk = d3.interpolateNumber(trans.k, k);
-        let temp = 0;
-        $this.D3Interval = d3.interval(function () {
-            if (temp < 1) {
-                temp += 0.005;
-                $this.zoomHandler.scaleBy($this.canvas, fk(temp));
-                $this.zoomHandler.translateBy($this.canvas, x, y);
-            } else {
-                $this.D3Interval.stop();
-                $this.D3Interval = null;
-            }
-        }, 1);
-    }*/
+     const $this = this;
+     const trans = d3.zoomTransform($this.canvas.node());
+     const fx = d3.interpolateNumber(364, x);
+     const fy = d3.interpolateNumber(0, y);
+     const fk = d3.interpolateNumber(trans.k, k);
+     let temp = 0;
+     $this.D3Interval = d3.interval(function () {
+     if (temp < 1) {
+     temp += 0.005;
+     $this.zoomHandler.scaleBy($this.canvas, fk(temp));
+     $this.zoomHandler.translateBy($this.canvas, x, y);
+     } else {
+     $this.D3Interval.stop();
+     $this.D3Interval = null;
+     }
+     }, 1);
+     }*/
 
     private drawCircle(x, y) {
         const $this = this;
@@ -243,7 +321,7 @@ export default class Application extends PIXI.Application {
             $this.startDrawing = !$this.startDrawing;
             if (!$this.startDrawing) {
                 (b as any).text.text = "Start drawing";
-                $this.counterGraphic++;
+                $this._counterGraphic++;
                 $this.newGraphic = [];
             } else {
                 (b as any).text.text = "Stop drawing";
@@ -258,22 +336,22 @@ export default class Application extends PIXI.Application {
         (returnLastActionB as any).on("click", () => {
             if ($this.newGraphic.length) {
                 $this.newGraphic.splice(-1, 1);
-                $this.Container.removeChild($this.newGraphicObj[$this.counterGraphic]);
-                $this.newGraphicObj[$this.counterGraphic] = $this.createGraph($this.newGraphic);
-                if ($this.newGraphicObj[$this.counterGraphic]) {
-                    $this.Container.addChild($this.newGraphicObj[$this.counterGraphic]);
+                $this.Container.removeChild($this.newGraphicObj[$this._counterGraphic]);
+                $this.newGraphicObj[$this._counterGraphic] = $this.createGraph($this.newGraphic);
+                if ($this.newGraphicObj[$this._counterGraphic]) {
+                    $this.Container.addChild($this.newGraphicObj[$this._counterGraphic]);
                 }
             }
         });
 
     }
 
-    public getD3X(x: number) {
+    public getD3X(x: number): number {
         const $this = this;
         return (x - $this.zoomTrans.x) / $this.zoomTrans.scale
     }
 
-    public getD3Y(y: number) {
+    public getD3Y(y: number): number {
         const $this = this;
         return (y - $this.zoomTrans.x) / $this.zoomTrans.scale
     }
@@ -281,20 +359,28 @@ export default class Application extends PIXI.Application {
     public resize() {
         const $this = this;
         $this.rendererResize($this);
-        window.addEventListener('resize', ()=>{
+        window.addEventListener('resize', () => {
             return $this.rendererResize($this);
         });
-        window.addEventListener('deviceOrientation', ()=>{
+        window.addEventListener('deviceOrientation', () => {
             return $this.rendererResize($this);
         });
     };
 
-    public rendererResize ($this) {
+    public rendererResize($this) {
         let {scale, scaleX, scaleY} = scaleToWindow('canvas-container');
     };
 
 
+    private removeColorFromSprite(sprite) {
+        const filter = new PIXI.filters.ColorMatrixFilter();
+        sprite.filters = [filter];
+        filter.desaturate();
+    }
 
+    private removeFiltersFromSprite(sprite) {
+        sprite.filters = [];
+    }
 }
 
 window.onload = () => {
