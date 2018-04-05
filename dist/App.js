@@ -30,7 +30,7 @@ class Application extends PIXI.Application {
         this._counterGraphic = 0;
         this.newGraphicObj = [];
         this.Circls = [];
-        this.zoomTrans = null;
+        this.zoomTrans = { x: 0, y: 0, k: .1 };
         this.startDrawing = false;
         this.backgroundClicked = false;
         this.sprites = {};
@@ -40,6 +40,7 @@ class Application extends PIXI.Application {
         this.heightCanvas = null;
         this.D3Interval = null;
         this.isMobile = false;
+        this._modeSearh = false;
         this.Container.zIndex = 0;
         this.ContainerButtons.zIndex = 1;
         this.width = width;
@@ -106,10 +107,12 @@ class Application extends PIXI.Application {
         // const filter = new filters.ColorMatrixFilter();
         //$this.removeColorFromSprite(($this.sprites as any).background);
         $this.sprites.background.on("pointerdown", (e) => {
-            const x = $this.getD3X(e.data.global.x);
-            const y = $this.getD3Y(e.data.global.y);
             if ($this.startDrawing) {
-                $this.newGraphic.push([x, y]);
+                const x = e.data.global.x;
+                const y = e.data.global.y;
+                const xD3 = $this.getD3X(x);
+                const yD3 = $this.getD3Y(y);
+                $this.newGraphic.push([xD3, yD3]);
                 $this.Container.removeChild($this.newGraphicObj[$this._counterGraphic]);
                 $this.newGraphicObj[$this._counterGraphic] = $this.createGraph($this.newGraphic);
                 $this.Container.addChild($this.newGraphicObj[$this._counterGraphic]);
@@ -141,10 +144,68 @@ class Application extends PIXI.Application {
                     data = data.filter((e) => e.value);
                     if (data.length) {
                         $this.removeColorFromSprite($this.sprites.background);
+                        $this.modeSearh = true;
+                        let dataSearch = {};
+                        data.map((e) => {
+                            dataSearch[e.name] = e.value;
+                        });
+                        $this.Graphics.filter((e) => {
+                            let { G: dataGraphic, Graph: obj } = e;
+                            obj.alpha = 0;
+                            if (dataSearch.hasOwnProperty('pieces')) {
+                                if (!dataGraphic.info.hasOwnProperty('pieces')) {
+                                    return false;
+                                }
+                                if (!dataGraphic.info.pieces) {
+                                    return false;
+                                }
+                                let sPieces = "S+1";
+                                if (dataSearch.pieces == 2) {
+                                    sPieces = "S+2";
+                                }
+                                else if (dataSearch.pieces == 3) {
+                                    sPieces = "S+3";
+                                }
+                                if (dataGraphic.info.pieces != sPieces) {
+                                    return false;
+                                }
+                            }
+                            if (dataSearch.hasOwnProperty('surface')) {
+                                if (!dataGraphic.info.hasOwnProperty('surface')) {
+                                    return false;
+                                }
+                                if (!dataGraphic.info.surface) {
+                                    return false;
+                                }
+                                let bool = false;
+                                let sSurface = dataGraphic.info.surface;
+                                if (dataSearch.surface == 1) {
+                                    bool = sSurface > 100 && sSurface < 200;
+                                }
+                                else if (dataSearch.surface == 2) {
+                                    bool = sSurface > 200 && sSurface < 300;
+                                }
+                                else if (dataSearch.surface == 3) {
+                                    bool = sSurface > 400;
+                                }
+                                if (!bool) {
+                                    return bool;
+                                }
+                            }
+                            obj.alpha = 1;
+                        });
                     }
                     else {
                         $this.removeFiltersFromSprite($this.sprites.background);
+                        $this.Graphics.map((e) => {
+                            let { Graph: obj } = e;
+                            obj.alpha = 0;
+                        });
+                        $this.modeSearh = false;
                     }
+                });
+                $(this).find('form select').on('change', function () {
+                    $($(this).parents('form')[0]).submit();
                 });
             }).on("hidden.bs.modal", function (e) {
                 // $(this).remove();
@@ -162,12 +223,16 @@ class Application extends PIXI.Application {
                 Graph.interactive = true;
                 Graph.alpha = 0;
                 Graph.mouseover = function () {
-                    this.alpha = 1;
+                    if (!$this.modeSearh) {
+                        this.alpha = 1;
+                    }
                     $(document).tooltip("option", "content", "<h1>" + G.info.title + "</h1><p>" + G.info.description + "</p>");
                     $('body').removeClass('tooltip-hidden');
                 };
                 Graph.mouseout = function () {
-                    this.alpha = 0;
+                    if (!$this.modeSearh) {
+                        this.alpha = 0;
+                    }
                     $(document).tooltip("option", "content", ' ');
                     $('body').addClass('tooltip-hidden');
                 };
@@ -186,7 +251,7 @@ class Application extends PIXI.Application {
                     }
                 };
                 $this.Container.addChild(Graph);
-                Graphics.push(Graph);
+                Graphics.push({ G, Graph });
             }
         });
         $this.Graphics = Graphics;
@@ -205,10 +270,12 @@ class Application extends PIXI.Application {
         }).filter(() => {
             return !$this.D3Interval;
         });
-        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(364, 0).scale(0.1));
+        const initX = 0;
+        const initY = -100;
+        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(initX, initY).scale(.1));
         $this.canvas.on("click", () => {
-            const x = (d3.event.x - $this.zoomTrans.x) / $this.zoomTrans.k;
-            const y = (d3.event.y - $this.zoomTrans.y) / $this.zoomTrans.k;
+            // const x = (d3.event.x - $this.zoomTrans.x) / $this.zoomTrans.k;
+            // const y = (d3.event.y - $this.zoomTrans.y) / $this.zoomTrans.k;
         });
     }
     zoomActions($this) {
@@ -216,7 +283,9 @@ class Application extends PIXI.Application {
         const y = d3.event.transform.y;
         const k = d3.event.transform.k;
         $this.zoomTrans = d3.event.transform;
-        $this.canvas.attr("transform", d3.event.transform);
+        // let translate = "translate(" + d3.event.translate + ")";
+        // let scale = "scale(" + d3.event.scale + ")";
+        // $this.canvas.attr("transform", translate + scale);
         $this.Container.scale.set(k);
         $this.Container.position.set(x, y);
     }
@@ -318,21 +387,21 @@ class Application extends PIXI.Application {
     }
     getD3X(x) {
         const $this = this;
-        return (x - $this.zoomTrans.x) / $this.zoomTrans.scale;
+        return (x - $this.zoomTrans.x) / $this.zoomTrans.k;
     }
     getD3Y(y) {
         const $this = this;
-        return (y - $this.zoomTrans.x) / $this.zoomTrans.scale;
+        return (y - $this.zoomTrans.y) / $this.zoomTrans.k;
     }
     resize() {
-        const $this = this;
+        /*const $this = this;
         $this.rendererResize($this);
         window.addEventListener('resize', () => {
             return $this.rendererResize($this);
         });
         window.addEventListener('deviceOrientation', () => {
             return $this.rendererResize($this);
-        });
+        });*/
     }
     ;
     rendererResize($this) {
@@ -347,11 +416,17 @@ class Application extends PIXI.Application {
     removeFiltersFromSprite(sprite) {
         sprite.filters = [];
     }
+    get modeSearh() {
+        return this._modeSearh;
+    }
+    set modeSearh(value) {
+        this._modeSearh = value;
+    }
 }
 exports.default = Application;
 window.onload = () => {
     (() => {
-        return new Application("container", document.getElementById('container').offsetWidth, document.body.clientHeight);
+        return new Application("container", 1140, 684);
     })();
 };
 //# sourceMappingURL=App.js.map
