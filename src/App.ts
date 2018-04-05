@@ -103,7 +103,8 @@ export default class Application extends PIXI.Application {
             });
         });
         ($this as any ).Customloader.onProgress.add((e) => {
-            (text as any).text = `Loading ${e.progress}%`;
+            let prog = parseInt(e.progress);
+            (text as any).text = `Loading ${prog}%`;
         }); // called once per loaded/errored file
         // $this.Customloader.onError.add(() => { }); // called once per errored file
         // $this.Customloader.onLoad.add(() => { }); // called once per loaded file
