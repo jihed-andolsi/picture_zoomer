@@ -18,6 +18,7 @@ import {scaleToWindow} from "./Tools/Scale";
 import {isMobile} from "./Tools/DeviceDetect";
 let ModalDetail = require("./Components/DetailModal.html");
 let ModalSearch = require("./Components/SearchForm.html");
+let ModalAdd = require("./Components/addModal.html");
 // import * as filters from 'pixi-filters';
 
 export default class Application extends PIXI.Application {
@@ -390,6 +391,7 @@ export default class Application extends PIXI.Application {
                 (b as any).text.text = "Start drawing";
                 $this._counterGraphic++;
                 $this.newGraphic = [];
+                $(ModalAdd).modal({show: true});
             } else {
                 (b as any).text.text = "Stop drawing";
             }

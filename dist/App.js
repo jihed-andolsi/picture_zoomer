@@ -19,6 +19,7 @@ const Scale_1 = require("./Tools/Scale");
 const DeviceDetect_1 = require("./Tools/DeviceDetect");
 let ModalDetail = require("./Components/DetailModal.html");
 let ModalSearch = require("./Components/SearchForm.html");
+let ModalAdd = require("./Components/addModal.html");
 // import * as filters from 'pixi-filters';
 class Application extends PIXI.Application {
     constructor(selectorId, width, height) {
@@ -363,6 +364,7 @@ class Application extends PIXI.Application {
                 b.text.text = "Start drawing";
                 $this._counterGraphic++;
                 $this.newGraphic = [];
+                $(ModalAdd).modal({ show: true });
             }
             else {
                 b.text.text = "Stop drawing";
