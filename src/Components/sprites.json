@@ -1,4 +1,5 @@
 [
   {"name": "background", "url": "./assets/pictures/gfh.jpg", "x": 0, "y": 0},
-  {"name": "searchIcon", "url": "./assets/pictures/serach-icon.png", "x": 0, "y": 0}
+  {"name": "searchIcon", "url": "./assets/pictures/serach-icon.png", "x": 0, "y": 0},
+  {"name": "fulscreenIcon", "url": "./assets/pictures/fullscreen.png", "x": 0, "y": 0}
 ]

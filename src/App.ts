@@ -12,8 +12,9 @@ import * as PIXI from "pixi.js";
 import * as d3 from "d3";
 import Button from "./Tools/Button";
 import LoaderText from "./Tools/LoaderText";
-import {scaleToWindow} from "./Tools/Scale";
+// import {scaleToWindow} from "./Tools/Scale";
 import {isMobile} from "./Tools/DeviceDetect";
+import {enableFullscreen} from "./Tools/Fullscreen";
 
 const sprites = require("./Components/sprites.json");
 const graphics = require("./Components/graphics.json");
@@ -110,6 +111,7 @@ export default class Application extends PIXI.Application {
             $this.stage.removeChild(text);
             $this.addBackground();
             $this.addSearchButton();
+            $this.addFullscreenButton();
             $this.addButtons();
             $this.addGraphics();
             $this.initZoomAction();
@@ -238,6 +240,19 @@ export default class Application extends PIXI.Application {
             });
         });
         $this.ContainerButtons.addChild(($this.sprites as any).searchIcon);
+    }
+
+    private addFullscreenButton(){
+        const $this = this;
+        ($this.sprites as any).fulscreenIcon.x = ($this as any).width - 150;
+        ($this.sprites as any).fulscreenIcon.y = ($this as any).height - 150;
+        ($this.sprites as any).fulscreenIcon.width = 100;
+        ($this.sprites as any).fulscreenIcon.height = 100;
+        ($this.sprites as any).fulscreenIcon.interactive = true;
+        ($this.sprites as any).fulscreenIcon.on("pointerdown", (e) => {
+            enableFullscreen();
+        });
+        $this.ContainerButtons.addChild(($this.sprites as any).fulscreenIcon);
     }
 
     private addGraphics() {
@@ -461,10 +476,10 @@ export default class Application extends PIXI.Application {
     };
 
     public rendererResize($this) {
-        if(isMobile()){
+        //if(isMobile()){
             $this.width = window.innerWidth;
             $this.height = window.innerHeight;
-        }
+        //}
         let ratio = Math.min(window.innerWidth/$this.width,
             window.innerHeight/$this.height);
         if(ratio >1){
@@ -476,6 +491,8 @@ export default class Application extends PIXI.Application {
                     $this.ContainerButtons.scale.y = ratio;
         ($this.sprites as any).searchIcon.x = ($this as any).width - 150;
         ($this.sprites as any).searchIcon.y = 50;
+        ($this.sprites as any).fulscreenIcon.x = ($this as any).width - 150;
+        ($this.sprites as any).fulscreenIcon.y = ($this as any).height - 150;
         $this.addButtons();
 
 
