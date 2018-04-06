@@ -2,21 +2,25 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 require("./Assets/css/_custom.scss");
 require("./Assets/css/main.css");
-let $ = require("jquery");
-window.jQuery = window.$ = $;
-require("bootstrap");
-require("jquery-ui");
-require("./Assets/jquery-ui-1.12.1/jquery-ui.css");
-require("./Assets/jquery-ui-1.12.1/jquery-ui.theme.css");
-require("./Assets/jquery-ui-1.12.1/jquery-ui.structure.css");
+// let $ = require("jquery");
+// (window as any).jQuery = (window as any).$ = $;
+let $ = window.$;
+// require("bootstrap");
+// require("jquery-ui");
+// require("./Assets/jquery-ui-1.12.1/jquery-ui.css");
+// require("./Assets/jquery-ui-1.12.1/jquery-ui.theme.css");
+// require("./Assets/jquery-ui-1.12.1/jquery-ui.structure.css");
 const PIXI = require("pixi.js");
 const d3 = require("d3");
-const sprites = require("./Components/sprites.json");
-const graphics = require("./Components/graphics.json");
 const Button_1 = require("./Tools/Button");
 const LoaderText_1 = require("./Tools/LoaderText");
-const Scale_1 = require("./Tools/Scale");
 const DeviceDetect_1 = require("./Tools/DeviceDetect");
+const Fullscreen_1 = require("./Tools/Fullscreen");
+// import {scaleToWindow} from "./Tools/Scale";
+const configPlanManager = window.configPlanManager;
+const sprites = configPlanManager.sprites;
+// const graphics = require("./Components/graphics.json");
+const graphics = configPlanManager.properties;
 let ModalDetail = require("./Components/DetailModal.html");
 let ModalSearch = require("./Components/SearchForm.html");
 let ModalAdd = require("./Components/addModal.html");
@@ -35,6 +39,8 @@ class Application extends PIXI.Application {
         this.startDrawing = false;
         this.backgroundClicked = false;
         this.sprites = {};
+        this.Graphics = [];
+        this.Buttons = [];
         this.canvas = null;
         this.context = null;
         this.widthCanvas = null;
@@ -46,13 +52,12 @@ class Application extends PIXI.Application {
         this.ContainerButtons.zIndex = 1;
         this.width = width;
         this.height = height;
-        this.widthExtentMaximum = this.width + 10000;
-        this.heightExtentMaximum = this.width + 10000;
+        this.widthExtentMaximum = configPlanManager.widthExtent(this.width);
+        this.heightExtentMaximum = configPlanManager.heightExtent(this.height);
         this.selector = selectorId;
         this.isMobile = DeviceDetect_1.isMobile();
         this.appendView();
         this.setup();
-        this.resize();
     }
     appendView() {
         const $this = this;
@@ -61,7 +66,7 @@ class Application extends PIXI.Application {
         $("canvas").attr('id', 'canvas-container');
         $("canvas").css('margin', '0');
         $("canvas").attr('title', ' ');
-        $(document).tooltip({
+        $("canvas[title]").tooltip({
             track: true,
             context: function () {
                 return ' ';
@@ -85,7 +90,8 @@ class Application extends PIXI.Application {
             });
         });
         $this.Customloader.onProgress.add((e) => {
-            text.text = `Loading ${e.progress}%`;
+            let prog = parseInt(e.progress);
+            text.text = `Loading ${prog}%`;
         }); // called once per loaded/errored file
         // $this.Customloader.onError.add(() => { }); // called once per errored file
         // $this.Customloader.onLoad.add(() => { }); // called once per loaded file
@@ -93,24 +99,30 @@ class Application extends PIXI.Application {
             $this.stage.removeChild(text);
             $this.addBackground();
             $this.addSearchButton();
+            $this.addFullscreenButton();
             $this.addButtons();
             $this.addGraphics();
             $this.initZoomAction();
             //let colorMatrix = new PIXI.ColorMatrixFilter();
             //colorMatrix.contrast(2);
+            $this.resizeCanvas();
         });
     }
     addBackground() {
         const $this = this;
+        if ($this.sprites.background.interactive) {
+            $this.Container.removeChild($this.sprites.background);
+        }
         $this.sprites.background.x = 0;
         $this.sprites.background.y = 0;
         $this.sprites.background.interactive = true;
         // const filter = new filters.ColorMatrixFilter();
         //$this.removeColorFromSprite(($this.sprites as any).background);
         $this.sprites.background.on("pointerdown", (e) => {
+            const x = e.data.global.x;
+            const y = e.data.global.y;
+            console.log(`Point {${x}, ${y}}`);
             if ($this.startDrawing) {
-                const x = e.data.global.x;
-                const y = e.data.global.y;
                 const xD3 = $this.getD3X(x);
                 const yD3 = $this.getD3Y(y);
                 $this.newGraphic.push([xD3, yD3]);
@@ -124,6 +136,9 @@ class Application extends PIXI.Application {
     }
     addSearchButton() {
         const $this = this;
+        /*if(($this.sprites as any).searchIcon.interactive){
+            $this.ContainerButtons.removeChild(($this.sprites as any).searchIcon)
+        }*/
         $this.sprites.searchIcon.x = $this.width - 150;
         $this.sprites.searchIcon.y = 50;
         $this.sprites.searchIcon.width = 100;
@@ -139,6 +154,7 @@ class Application extends PIXI.Application {
             else {
                 mo = $(ModalSearch);
             }
+            $(ModalSearch).attr('data-initilized', 'true');
             mo.modal({ show: true }).on("shown.bs.modal", function (e) {
                 $(this).find('form').submit(function () {
                     let data = $(this).serializeArray();
@@ -212,7 +228,21 @@ class Application extends PIXI.Application {
                 // $(this).remove();
             });
         });
-        $this.ContainerButtons.addChild($this.sprites.searchIcon);
+        if (configPlanManager.showSearchButton) {
+            $this.ContainerButtons.addChild($this.sprites.searchIcon);
+        }
+    }
+    addFullscreenButton() {
+        const $this = this;
+        $this.sprites.fulscreenIcon.x = $this.width - 150;
+        $this.sprites.fulscreenIcon.y = $this.height - 150;
+        $this.sprites.fulscreenIcon.width = 100;
+        $this.sprites.fulscreenIcon.height = 100;
+        $this.sprites.fulscreenIcon.interactive = true;
+        $this.sprites.fulscreenIcon.on("pointerdown", (e) => {
+            Fullscreen_1.enableFullscreen();
+        });
+        $this.ContainerButtons.addChild($this.sprites.fulscreenIcon);
     }
     addGraphics() {
         const $this = this;
@@ -227,14 +257,23 @@ class Application extends PIXI.Application {
                     if (!$this.modeSearh) {
                         this.alpha = 1;
                     }
-                    $(document).tooltip("option", "content", "<h1>" + G.info.title + "</h1><p>" + G.info.description + "</p>");
-                    $('body').removeClass('tooltip-hidden');
+                    let description = "";
+                    (G.info.reference) ? description += "<p>" + G.info.reference + "</p>" : "";
+                    (G.info.surface_terrain) ? description += "<p><b>Surface lot vérifiée:</b> " + G.info.surface_terrain + "</p>" : "";
+                    (G.info.surface_habitable) ? description += "<p><b>Surface TT Area:</b> " + G.info.surface_habitable + "</p>" : "";
+                    (G.info.etage) ? description += "<p><b>Niveaux Levels:</b> " + G.info.etage + "</p>" : "";
+                    description += "<p>Cliquer sur le bien pour télécharger le PDF</p>";
+                    (G.info.image) ? description += "<p><img src='" + G.info.image.small + "'></p>" : "";
+                    if (description) {
+                        $("canvas[title]").tooltip("option", "content", "<div style='text-align: center'>" + description + "</div>");
+                        $('body').removeClass('tooltip-hidden');
+                    }
                 };
                 Graph.mouseout = function () {
                     if (!$this.modeSearh) {
                         this.alpha = 0;
                     }
-                    $(document).tooltip("option", "content", ' ');
+                    $("canvas[title]").tooltip("option", "content", ' ');
                     $('body').addClass('tooltip-hidden');
                 };
                 Graph.pointerdown = function (e) {
@@ -243,8 +282,15 @@ class Application extends PIXI.Application {
                     // console.dir(xx);
                     // $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
                     $(ModalDetail).modal({ show: true }).on("shown.bs.modal", function (e) {
+                        //picture-container
+                        $(this).find(".picture-container").html("<img src='" + G.info.image.large + "' class=\"img-fluid\">");
                         $(this).find(".modal-title").html(G.info.title);
-                        $(this).find(".description").html(G.info.description);
+                        let descriptionDetail = "";
+                        (G.info.reference) ? descriptionDetail += "<p>" + G.info.reference + "</p>" : "";
+                        (G.info.surface_terrain) ? descriptionDetail += "<p><b>Surface lot vérifiée:</b> " + G.info.surface_terrain + "</p>" : "";
+                        (G.info.surface_habitable) ? descriptionDetail += "<p><b>Surface TT Area:</b> " + G.info.surface_habitable + "</p>" : "";
+                        (G.info.etage) ? descriptionDetail += "<p><b>Niveaux Levels:</b> " + G.info.etage + "</p>" : "";
+                        $(this).find(".description").html(descriptionDetail);
                     }).on("hidden.bs.modal", function (e) {
                         $(this).remove();
                     });
@@ -271,9 +317,19 @@ class Application extends PIXI.Application {
         }).filter(() => {
             return !$this.D3Interval;
         });
-        const initX = 0;
-        const initY = -100;
-        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(initX, initY).scale(.1));
+        $this.initZommActionFunctionalities();
+    }
+    initZommActionFunctionalities() {
+        const $this = this;
+        let initX = 0;
+        let initY = -100;
+        let scalInit = .5;
+        if (DeviceDetect_1.isMobile()) {
+            scalInit = .5;
+            initY = -$this.height / 2;
+            initX = -$this.width / 2;
+        }
+        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(initX, initY).scale(scalInit));
         $this.canvas.on("click", () => {
             // const x = (d3.event.x - $this.zoomTrans.x) / $this.zoomTrans.k;
             // const y = (d3.event.y - $this.zoomTrans.y) / $this.zoomTrans.k;
@@ -351,31 +407,39 @@ class Application extends PIXI.Application {
     }
     addButtons() {
         const $this = this;
+        if ($this.Buttons.length) {
+            $this.Buttons.map((e) => {
+                $this.ContainerButtons.removeChild(e);
+            });
+            $this.Buttons = [];
+        }
         let width = 150;
         let height = 50;
         let x = 10;
         let y = $this.height - height - 20;
         const b = new Button_1.default(width, height, x, y, "Start drawing", null);
-        $this.ContainerButtons.addChild(b);
         $this.stage.addChild($this.ContainerButtons);
         b.on("click", () => {
             $this.startDrawing = !$this.startDrawing;
             if (!$this.startDrawing) {
                 b.text.text = "Start drawing";
                 $this._counterGraphic++;
+                if ($this.newGraphic.length) {
+                    $('#property #coords').html(JSON.stringify($this.newGraphic));
+                    $("#property").modal({ show: true });
+                }
                 $this.newGraphic = [];
-                $(ModalAdd).modal({ show: true });
             }
             else {
                 b.text.text = "Stop drawing";
             }
         });
+        $this.Buttons.push(b);
         width = 250;
         height = 50;
         x = 170;
         y = $this.height - height - 20;
         const returnLastActionB = new Button_1.default(width, height, x, y, "Return to last action", null);
-        $this.ContainerButtons.addChild(returnLastActionB);
         returnLastActionB.on("click", () => {
             if ($this.newGraphic.length) {
                 $this.newGraphic.splice(-1, 1);
@@ -386,6 +450,13 @@ class Application extends PIXI.Application {
                 }
             }
         });
+        $this.Buttons.push(returnLastActionB);
+        if (configPlanManager.hasOwnProperty('showButtonPlans')) {
+            if (configPlanManager.showButtonPlans) {
+                $this.ContainerButtons.addChild(b);
+                $this.ContainerButtons.addChild(returnLastActionB);
+            }
+        }
     }
     getD3X(x) {
         const $this = this;
@@ -395,19 +466,43 @@ class Application extends PIXI.Application {
         const $this = this;
         return (y - $this.zoomTrans.y) / $this.zoomTrans.k;
     }
-    resize() {
-        /*const $this = this;
+    resizeCanvas() {
+        const $this = this;
         $this.rendererResize($this);
         window.addEventListener('resize', () => {
             return $this.rendererResize($this);
         });
         window.addEventListener('deviceOrientation', () => {
             return $this.rendererResize($this);
-        });*/
+        });
     }
     ;
     rendererResize($this) {
-        let { scale, scaleX, scaleY } = Scale_1.scaleToWindow('canvas-container');
+        if (DeviceDetect_1.isMobile() || configPlanManager.fullSizeShow) {
+            $this.width = window.innerWidth;
+            $this.height = window.innerHeight;
+        }
+        let ratio = Math.min(window.innerWidth / $this.width, window.innerHeight / $this.height);
+        if (ratio > 1) {
+            ratio = 1;
+        }
+        $this.Container.scale.x =
+            $this.Container.scale.y =
+                $this.ContainerButtons.scale.x =
+                    $this.ContainerButtons.scale.y = ratio;
+        $this.sprites.searchIcon.x = $this.width - 150;
+        $this.sprites.searchIcon.y = 50;
+        $this.sprites.fulscreenIcon.x = $this.width - 150;
+        $this.sprites.fulscreenIcon.y = $this.height - 150;
+        $this.addButtons();
+        // Update the renderer dimensions
+        let width = Math.ceil($this.width * ratio);
+        let height = Math.ceil($this.height * ratio);
+        /*if(window.innerWidth > window.innerHeight && isMobile()){
+            [width, height] = [height, width];
+        }*/
+        $this.renderer.resize(width, height);
+        $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate($this.zoomTrans.x, $this.zoomTrans.y).scale($this.zoomTrans.k));
     }
     ;
     removeColorFromSprite(sprite) {
@@ -428,7 +523,14 @@ class Application extends PIXI.Application {
 exports.default = Application;
 window.onload = () => {
     (() => {
-        return new Application("container", 1140, 684);
+        let [width, height] = configPlanManager.size;
+        if (DeviceDetect_1.isMobile()) {
+            [width, height] = configPlanManager.sizePhone;
+            if (width > height) {
+                [width, height] = [height, width];
+            }
+        }
+        return new Application("container", width, height);
     })();
 };
 //# sourceMappingURL=App.js.map

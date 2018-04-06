@@ -1,7 +1,7 @@
 /**
  * Created by ANDOLSI on 05/04/2018.
  */
-let $ = require("jquery");
+let $ = (window as any).$;
 export let enableFullscreen = () => {
     if (
         (document as any).fullscreenElement ||

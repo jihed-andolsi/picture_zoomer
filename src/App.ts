@@ -1,24 +1,26 @@
 require("./Assets/css/_custom.scss");
 require("./Assets/css/main.css");
-let $ = require("jquery");
-(window as any).jQuery = (window as any).$ = $;
-require("bootstrap");
-require("jquery-ui");
-require("./Assets/jquery-ui-1.12.1/jquery-ui.css");
-require("./Assets/jquery-ui-1.12.1/jquery-ui.theme.css");
-require("./Assets/jquery-ui-1.12.1/jquery-ui.structure.css");
+// let $ = require("jquery");
+// (window as any).jQuery = (window as any).$ = $;
+let $ = (window as any).$;
+// require("bootstrap");
+// require("jquery-ui");
+// require("./Assets/jquery-ui-1.12.1/jquery-ui.css");
+// require("./Assets/jquery-ui-1.12.1/jquery-ui.theme.css");
+// require("./Assets/jquery-ui-1.12.1/jquery-ui.structure.css");
 
 import * as PIXI from "pixi.js";
 import * as d3 from "d3";
 import Button from "./Tools/Button";
 import LoaderText from "./Tools/LoaderText";
-// import {scaleToWindow} from "./Tools/Scale";
 import {isMobile} from "./Tools/DeviceDetect";
 import {enableFullscreen} from "./Tools/Fullscreen";
+// import {scaleToWindow} from "./Tools/Scale";
 
-const sprites = require("./Components/sprites.json");
-const graphics = require("./Components/graphics.json");
-
+const configPlanManager = (window as any).configPlanManager;
+const sprites = configPlanManager.sprites;
+// const graphics = require("./Components/graphics.json");
+const graphics = configPlanManager.properties;
 let ModalDetail = require("./Components/DetailModal.html");
 let ModalSearch = require("./Components/SearchForm.html");
 let ModalAdd = require("./Components/addModal.html");
@@ -61,8 +63,8 @@ export default class Application extends PIXI.Application {
         this.ContainerButtons.zIndex = 1;
         this.width = width;
         this.height = height;
-        this.widthExtentMaximum = this.width + 10000;
-        this.heightExtentMaximum = this.height + 10000;
+        this.widthExtentMaximum = configPlanManager.widthExtent(this.width);
+        this.heightExtentMaximum = configPlanManager.heightExtent(this.height);
         this.selector = selectorId;
         this.isMobile = isMobile();
         this.appendView();
@@ -76,7 +78,7 @@ export default class Application extends PIXI.Application {
         $("canvas").attr('id', 'canvas-container');
         $("canvas").css('margin', '0');
         $("canvas").attr('title', ' ');
-        $(document).tooltip({
+        $("canvas[title]").tooltip({
             track: true,
             context: function () {
                 return ' ';
@@ -133,9 +135,10 @@ export default class Application extends PIXI.Application {
         // const filter = new filters.ColorMatrixFilter();
         //$this.removeColorFromSprite(($this.sprites as any).background);
         ($this.sprites as any).background.on("pointerdown", (e) => {
+            const x = e.data.global.x;
+            const y = e.data.global.y;
+            console.log(`Point {${x}, ${y}}`);
             if($this.startDrawing){
-                const x = e.data.global.x;
-                const y = e.data.global.y;
                 const xD3 = $this.getD3X(x);
                 const yD3 = $this.getD3Y(y);
                 $this.newGraphic.push([xD3, yD3]);
@@ -240,7 +243,9 @@ export default class Application extends PIXI.Application {
                 // $(this).remove();
             });
         });
-        $this.ContainerButtons.addChild(($this.sprites as any).searchIcon);
+        if(configPlanManager.showSearchButton){
+            $this.ContainerButtons.addChild(($this.sprites as any).searchIcon);
+        }
     }
 
     private addFullscreenButton(){
@@ -269,14 +274,24 @@ export default class Application extends PIXI.Application {
                     if(!$this.modeSearh) {
                         (this as any).alpha = 1;
                     }
-                    $(document).tooltip("option", "content", "<h1>" + G.info.title + "</h1><p>" + G.info.description + "</p>");
-                    $('body').removeClass('tooltip-hidden');
+                    let description = "";
+                    (G.info.reference) ? description += "<p>" + G.info.reference +"</p>" : "";
+                    (G.info.surface_terrain) ? description += "<p><b>Surface lot vérifiée:</b> "+G.info.surface_terrain+"</p>" : "";
+                    (G.info.surface_habitable) ? description += "<p><b>Surface TT Area:</b> "+G.info.surface_habitable+"</p>" : "";
+                    (G.info.etage) ? description += "<p><b>Niveaux Levels:</b> "+G.info.etage+"</p>" : "";
+                    description += "<p>Cliquer sur le bien pour télécharger le PDF</p>";
+                    (G.info.image) ? description += "<p><img src='"+G.info.image.small+"'></p>" : "";
+
+                    if(description){
+                        $("canvas[title]").tooltip("option", "content", "<div style='text-align: center'>" + description + "</div>");
+                        $('body').removeClass('tooltip-hidden');
+                    }
                 };
                 (Graph as any).mouseout = function () {
                     if(!$this.modeSearh){
                         (this as any).alpha = 0;
                     }
-                    $(document).tooltip("option", "content", ' ');
+                    $("canvas[title]").tooltip("option", "content", ' ');
                     $('body').addClass('tooltip-hidden');
                 };
 
@@ -286,8 +301,18 @@ export default class Application extends PIXI.Application {
                     // console.dir(xx);
                     // $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
                     $(ModalDetail).modal({show: true}).on("shown.bs.modal", function (e) {
+                        //picture-container
+                        $(this).find(".picture-container").html("<img src='"+G.info.image.large+"' class=\"img-fluid\">");
                         $(this).find(".modal-title").html(G.info.title);
-                        $(this).find(".description").html(G.info.description);
+
+                        let descriptionDetail = "";
+                        (G.info.reference) ? descriptionDetail += "<p>" + G.info.reference +"</p>" : "";
+                        (G.info.surface_terrain) ? descriptionDetail += "<p><b>Surface lot vérifiée:</b> "+G.info.surface_terrain+"</p>" : "";
+                        (G.info.surface_habitable) ? descriptionDetail += "<p><b>Surface TT Area:</b> "+G.info.surface_habitable+"</p>" : "";
+                        (G.info.etage) ? descriptionDetail += "<p><b>Niveaux Levels:</b> "+G.info.etage+"</p>" : "";
+
+
+                        $(this).find(".description").html(descriptionDetail);
                     }).on("hidden.bs.modal", function (e) {
                         $(this).remove();
                     });
@@ -323,7 +348,7 @@ export default class Application extends PIXI.Application {
         const $this = this;
         let initX = 0;
         let initY = -100;
-        let scalInit = .1;
+        let scalInit = .5;
         if(isMobile()){
             scalInit = .5;
             initY = - $this.height / 2;
@@ -410,49 +435,57 @@ export default class Application extends PIXI.Application {
     }
 
     private addButtons() {
-        const $this = this;
-        if($this.Buttons.length){
-            $this.Buttons.map((e) => {
-                $this.ContainerButtons.removeChild(e);
-            })
-            $this.Buttons = [];
+       const $this = this;
+       if($this.Buttons.length){
+           $this.Buttons.map((e) => {
+               $this.ContainerButtons.removeChild(e);
+           })
+           $this.Buttons = [];
+       }
+       let width = 150;
+       let height = 50;
+       let x = 10;
+       let y = ($this as any).height - height - 20;
+       const b = new Button(width, height, x, y, "Start drawing", null);
+       $this.stage.addChild($this.ContainerButtons);
+       (b as any).on("click", () => {
+           $this.startDrawing = !$this.startDrawing;
+           if (!$this.startDrawing) {
+               (b as any).text.text = "Start drawing";
+               $this._counterGraphic++;
+               if($this.newGraphic.length){
+                   $('#property #coords').html(JSON.stringify($this.newGraphic));
+                   $("#property").modal({show: true});
+               }
+               $this.newGraphic = [];
+
+           } else {
+               (b as any).text.text = "Stop drawing";
+           }
+       });
+       $this.Buttons.push(b);
+       width = 250;
+       height = 50;
+       x = 170;
+       y = ($this as any).height - height - 20;
+       const returnLastActionB = new Button(width, height, x, y, "Return to last action", null);
+       (returnLastActionB as any).on("click", () => {
+           if ($this.newGraphic.length) {
+               $this.newGraphic.splice(-1, 1);
+               $this.Container.removeChild($this.newGraphicObj[$this._counterGraphic]);
+               $this.newGraphicObj[$this._counterGraphic] = $this.createGraph($this.newGraphic);
+               if ($this.newGraphicObj[$this._counterGraphic]) {
+                   $this.Container.addChild($this.newGraphicObj[$this._counterGraphic]);
+               }
+           }
+       });
+       $this.Buttons.push(returnLastActionB);
+        if(configPlanManager.hasOwnProperty('showButtonPlans')){
+            if(configPlanManager.showButtonPlans){
+               $this.ContainerButtons.addChild(b);
+               $this.ContainerButtons.addChild(returnLastActionB);
+           }
         }
-        let width = 150;
-        let height = 50;
-        let x = 10;
-        let y = ($this as any).height - height - 20;
-        const b = new Button(width, height, x, y, "Start drawing", null);
-        $this.ContainerButtons.addChild(b);
-        $this.stage.addChild($this.ContainerButtons);
-        (b as any).on("click", () => {
-            $this.startDrawing = !$this.startDrawing;
-            if (!$this.startDrawing) {
-                (b as any).text.text = "Start drawing";
-                $this._counterGraphic++;
-                $this.newGraphic = [];
-                $(ModalAdd).modal({show: true});
-            } else {
-                (b as any).text.text = "Stop drawing";
-            }
-        });
-        $this.Buttons.push(b);
-        width = 250;
-        height = 50;
-        x = 170;
-        y = ($this as any).height - height - 20;
-        const returnLastActionB = new Button(width, height, x, y, "Return to last action", null);
-        $this.ContainerButtons.addChild(returnLastActionB);
-        (returnLastActionB as any).on("click", () => {
-            if ($this.newGraphic.length) {
-                $this.newGraphic.splice(-1, 1);
-                $this.Container.removeChild($this.newGraphicObj[$this._counterGraphic]);
-                $this.newGraphicObj[$this._counterGraphic] = $this.createGraph($this.newGraphic);
-                if ($this.newGraphicObj[$this._counterGraphic]) {
-                    $this.Container.addChild($this.newGraphicObj[$this._counterGraphic]);
-                }
-            }
-        });
-        $this.Buttons.push(returnLastActionB);
     }
 
     public getD3X(x: number) {
@@ -477,10 +510,10 @@ export default class Application extends PIXI.Application {
     };
 
     public rendererResize($this) {
-        //if(isMobile()){
+        if(isMobile() || configPlanManager.fullSizeShow){
             $this.width = window.innerWidth;
             $this.height = window.innerHeight;
-        //}
+        }
         let ratio = Math.min(window.innerWidth/$this.width,
             window.innerHeight/$this.height);
         if(ratio >1){
@@ -495,8 +528,6 @@ export default class Application extends PIXI.Application {
         ($this.sprites as any).fulscreenIcon.x = ($this as any).width - 150;
         ($this.sprites as any).fulscreenIcon.y = ($this as any).height - 150;
         $this.addButtons();
-
-
         // Update the renderer dimensions
         let width = Math.ceil($this.width * ratio);
         let height = Math.ceil($this.height * ratio);
@@ -530,9 +561,9 @@ export default class Application extends PIXI.Application {
 
 window.onload = () => {
     (() => {
-        let [width, height] = [960, 540];
+        let [width, height] = configPlanManager.size;
         if(isMobile()){
-            [width, height] = [window.innerWidth, window.innerHeight];
+            [width, height] = configPlanManager.sizePhone;
             if(width > height){
                 [width, height] = [height, width];
             }
