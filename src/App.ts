@@ -158,6 +158,9 @@ export default class Application extends PIXI.Application {
 
             $this.backgroundClicked = true;
         });
+        ($this.sprites as any).background.mouseover = function () {
+            $('body').addClass('tooltip-hidden');
+        };
         $this.Container.addChild(($this.sprites as any).background);
     }
 
@@ -168,7 +171,7 @@ export default class Application extends PIXI.Application {
             fontSize: 14, // Font Size
             // fontStyle: "italic",// Font Style
             fontWeight: "bold", // Font Weight
-            fill: ["#343434"], // gradient
+            fill: ["#646565"], // gradient
             // stroke: "#ffffff",
             // strokeThickness: 5,
             // dropShadow: true,
@@ -276,6 +279,11 @@ export default class Application extends PIXI.Application {
             }
 
         });
+        setTimeout(()=>{
+            if($(`${selector} input[name="do-search"]`).length){
+                $(`${selector}`).submit();
+            }
+        }, 3000);
         $(`${selector} input[name="reinitiliser"]`).click(function(){
             $this.removeFiltersFromSprite(($this.sprites as any).background);
             $this.Graphics.map((e) => {
@@ -388,6 +396,7 @@ export default class Application extends PIXI.Application {
         ($this.sprites as any).fulscreenIcon.on("pointerdown", (e) => {
             enableFullscreen();
         });
+        ($this.sprites as any).fulscreenIcon.buttonMode = true;
         if(configPlanManager.fullScreenButton){
             $this.ContainerButtons.addChild(($this.sprites as any).fulscreenIcon);
         }
@@ -402,19 +411,19 @@ export default class Application extends PIXI.Application {
             if (Graph) {
                 (Graph as any).interactive = true;
                 (Graph as any).alpha = 0;
+                (Graph as any).buttonMode = true;
                 (Graph as any).mouseover = function () {
-                    $this._graphicHovered = true;
                     if(!$this.modeSearh) {
                         (this as any).alpha = 1;
                     }
                     let description = "";
-                    (G.info.image && G.info.image.hasOwnProperty('small')) ? description += "<p><img class=\"img-fluid\" src='"+G.info.image.small+"'></p>" : "";
-                    (G.info.reference) ? description += "<p>" + G.info.reference +"</p>" : "";
-                    (!G.info.reference && G.info.title) ? description += "<p>" + G.info.title +"</p>" : "";
+                    (G.info.image && G.info.image.hasOwnProperty('small')) ? description += "<div class=\"col-12\" style='text-align: center;'><img class=\"img-fluid\" src='"+G.info.image.small+"'></div>" : "";
+                    (G.info.reference) ? description += "<div style='text-align:center; color:  #82A7C5;font-weight:  bold;width:  100%;'><span>" + G.info.reference +"</span></div>" : "";
+                    (!G.info.reference && G.info.title) ? description += "<div style='text-align:center; color:  #82A7C5;font-weight:  bold;width:  100%;'><span>" + G.info.title +"</span></div>" : "";
                     (G.info.surface_terrain) ? description += "<p><b>Surface du lot:</b> "+G.info.surface_terrain+"</p>" : "";
                     (G.info.surface_habitable) ? description += "<p><b>Surface TT:</b> "+G.info.surface_habitable+"</p>" : "";
                     (G.info.etage) ? description += "<p><b>Niveaux:</b> "+G.info.etage+"</p>" : "";
-                    description += "<p>Cliquer sur le bien pour télécharger le PDF</p>";
+                    description += "<p style='color: #d1a9a4'>Cliquer sur le bien pour télécharger le PDF</p>";
 
 
                     if(description){
@@ -426,12 +435,6 @@ export default class Application extends PIXI.Application {
                     if(!$this.modeSearh){
                         (this as any).alpha = 0;
                     }
-                    $this._graphicHovered = false;
-                    setTimeout(() => {
-                        if (!$this._graphicHovered) {
-                            $('body').addClass('tooltip-hidden');
-                        }
-                    }, 100);
                 };
 
                 (Graph as any).pointerdown = function (e) {
@@ -442,22 +445,20 @@ export default class Application extends PIXI.Application {
                     $(ModalDetail).modal({show: true}).on("shown.bs.modal", function (e) {
                         //picture-container
                         (G.info.image && G.info.image.hasOwnProperty('large')) ? $(this).find(".picture-container").html("<img src='"+G.info.image.large+"' class=\"img-fluid\">"): '';
-                        $(this).find(".modal-title").html(G.info.title);
-
+                        $(this).find(".modal-title").html("<span>" + G.info.title + "</span>");
                         let descriptionDetail = "";
-                        (G.info.reference) ? descriptionDetail += "<p>" + G.info.reference +"</p>" : "";
-                        (!G.info.reference && G.info.title) ? descriptionDetail += "<p>" + G.info.title +"</p>" : "";
-                        (G.info.surface_terrain) ? descriptionDetail += "<p><b>Surface du lot:</b> "+G.info.surface_terrain+"</p>" : "";
-                        (G.info.surface_habitable) ? descriptionDetail += "<p><b>Surface TT:</b> "+G.info.surface_habitable+"</p>" : "";
-                        (G.info.etage) ? descriptionDetail += "<p><b>Niveaux:</b> "+G.info.etage+"</p>" : "";
-                        (G.info.landUse) ? descriptionDetail += "<p><b>Lots:</b> "+G.info.landUse+"</p>" : "";
-                        (G.info.cuffar) ? descriptionDetail += "<p><b>Cuffar:</b> "+G.info.cuffar+"</p>" : "";
-                        (G.info.cosCoverage) ? descriptionDetail += "<p><b>CosCoverage:</b> "+G.info.cosCoverage+"</p>" : "";
-                        (G.info.emprise) ? descriptionDetail += "<p><b>Emprise:</b> "+G.info.emprise+"</p>" : "";
-                        (G.info.elevation) ? descriptionDetail += "<p><b>Elevation:</b> "+G.info.elevation+"</p>" : "";
+                        (G.info.reference) ? descriptionDetail += "<div class='col-12'><p><b>Reference:</b>" + G.info.reference +"</p></div>" : "";
+                        (G.info.surface_terrain) ? descriptionDetail += "<div class='col-6'><p><b>Surface du lot:</b> "+G.info.surface_terrain+"</p></div>" : "";
+                        (G.info.surface_habitable) ? descriptionDetail += "<div class='col-6'><p><b>Surface TT:</b> "+G.info.surface_habitable+"</p></div>" : "";
+                        (G.info.etage) ? descriptionDetail += "<div class='col-6'><p><b>Niveaux:</b> "+G.info.etage+"</p></div>" : "";
+                        (G.info.landUse) ? descriptionDetail += "<div class='col-6'><p><b>Vocation:</b> "+G.info.landUse+"</p></div>" : "";
+                        (G.info.cuffar) ? descriptionDetail += "<div class='col-6'><p><b>Cuffar:</b> "+G.info.cuffar+"</p></div>" : "";
+                        (G.info.cosCoverage) ? descriptionDetail += "<div class='col-6'><p><b>CosCoverage:</b> "+G.info.cosCoverage+"</p></div>" : "";
+                        (G.info.emprise) ? descriptionDetail += "<div class='col-6'><p><b>Emprise:</b> "+G.info.emprise+"</p></div>" : "";
+                        (G.info.elevation) ? descriptionDetail += "<div class='col-6'><p><b>Elevation:</b> "+G.info.elevation+"</p></div>" : "";
                         if(G.info.pdfDownloadLink){
                             let [firstPdf] = G.info.pdfDownloadLink;
-                            (firstPdf) ? descriptionDetail += `<a href="${firstPdf}" target="blank" class="btn btn-success col-12 no-decoration"><i class="fa fa-download" aria-hidden="true"></i>Cliquer pour télécharger le PDF</a>` : "";
+                            (firstPdf) ? descriptionDetail += `<a href="${firstPdf}" target="blank" class="btn btn-success col-12 no-decoration">Cliquer pour télécharger le PDF</a>` : "";
                         }
 
                         $(this).find(".description").html(descriptionDetail);
@@ -596,6 +597,7 @@ export default class Application extends PIXI.Application {
        let y = ($this as any).height - height - 20;
        const b = new Button(width, height, x, y, "Start drawing", null);
        $this.stage.addChild($this.ContainerButtons);
+        //b.buttonMode = true;
        (b as any).on("click", () => {
            $this.startDrawing = !$this.startDrawing;
            if (!$this.startDrawing) {
@@ -617,6 +619,7 @@ export default class Application extends PIXI.Application {
        x = 170;
        y = ($this as any).height - height - 20;
        const returnLastActionB = new Button(width, height, x, y, "Return to last action", null);
+        //returnLastActionB.buttonMode = true;
        (returnLastActionB as any).on("click", () => {
            if ($this.newGraphic.length) {
                $this.newGraphic.splice(-1, 1);
