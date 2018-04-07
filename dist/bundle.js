@@ -31916,14 +31916,16 @@ function transform(node) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __webpack_require__(/*! ./Assets/css/_custom.scss */ 264);
 __webpack_require__(/*! ./Assets/css/main.css */ 267);
-// let $ = require("jquery");
-// (window as any).jQuery = (window as any).$ = $;
 let $ = window.$;
-// require("bootstrap");
-// require("jquery-ui");
-// require("./Assets/jquery-ui-1.12.1/jquery-ui.css");
-// require("./Assets/jquery-ui-1.12.1/jquery-ui.theme.css");
-// require("./Assets/jquery-ui-1.12.1/jquery-ui.structure.css");
+/*
+let $ = require("jquery");
+(window as any).jQuery = (window as any).$ = $;
+
+require("bootstrap");
+require("jquery-ui");
+require("./Assets/jquery-ui-1.12.1/jquery-ui.css");
+require("./Assets/jquery-ui-1.12.1/jquery-ui.theme.css");
+require("./Assets/jquery-ui-1.12.1/jquery-ui.structure.css");*/
 const PIXI = __webpack_require__(/*! pixi.js */ 70);
 const d3 = __webpack_require__(/*! d3 */ 370);
 const Button_1 = __webpack_require__(/*! ./Tools/Button */ 662);
@@ -31962,6 +31964,8 @@ class Application extends PIXI.Application {
         this.D3Interval = null;
         this.isMobile = false;
         this._modeSearh = false;
+        this._graphicHovered = false;
+        this.PowredByText = null;
         this.Container.zIndex = 0;
         this.ContainerButtons.zIndex = 1;
         this.width = width;
@@ -32011,14 +32015,18 @@ class Application extends PIXI.Application {
         // $this.Customloader.onLoad.add(() => { }); // called once per loaded file
         $this.Customloader.onComplete.add((e) => {
             $this.stage.removeChild(text);
-            $this.addBackground();
+            if (configPlanManager.backgroundMultiple) {
+                $this.addBackgroundMultiple();
+            }
+            else {
+                $this.addBackground();
+            }
             $this.addSearchButton();
             $this.addFullscreenButton();
             $this.addButtons();
             $this.addGraphics();
             $this.initZoomAction();
-            //let colorMatrix = new PIXI.ColorMatrixFilter();
-            //colorMatrix.contrast(2);
+            $this.addPowredBy();
             $this.resizeCanvas();
         });
     }
@@ -32047,6 +32055,50 @@ class Application extends PIXI.Application {
             $this.backgroundClicked = true;
         });
         $this.Container.addChild($this.sprites.background);
+    }
+    addPowredBy() {
+        const $this = this;
+        let style = new PIXI.TextStyle({
+            fontFamily: "Arial",
+            fontSize: 14,
+            // fontStyle: "italic",// Font Style
+            fontWeight: "bold",
+            fill: ["#343434"],
+        });
+        $this.PowredByText = new PIXI.Text("Powred by ConceptLab", "arial");
+        $this.PowredByText.anchor = new PIXI.Point(0.5, 0.5);
+        $this.PowredByText.x = $this.width - 200;
+        $this.PowredByText.y = $this.height - 50;
+        $this.PowredByText.style = style;
+        $this.ContainerButtons.addChild(this.PowredByText);
+    }
+    addBackgroundMultiple() {
+        const $this = this;
+        [
+            [$this.sprites.background_1, 'background_1'],
+            [$this.sprites.background_2, 'background_2'],
+            [$this.sprites.background_3, 'background_3'],
+            [$this.sprites.background_4, 'background_4'],
+            [$this.sprites.background_5, 'background_5'],
+            [$this.sprites.background_6, 'background_6'],
+            [$this.sprites.background_7, 'background_7'],
+            [$this.sprites.background_8, 'background_8'],
+            [$this.sprites.background_9, 'background_9'],
+            [$this.sprites.background_10, 'background_10'],
+            [$this.sprites.background_11, 'background_11'],
+            [$this.sprites.background_12, 'background_12'],
+            [$this.sprites.background_13, 'background_13'],
+            [$this.sprites.background_14, 'background_14'],
+            [$this.sprites.background_15, 'background_15'],
+            [$this.sprites.background_16, 'background_16'],
+        ].map((element) => {
+            const $this = this;
+            let [background, name] = element;
+            var found = sprites.filter(function (item) { return item.name === name; });
+            background.x = found[0].x;
+            background.y = found[0].y;
+            $this.Container.addChild(background);
+        });
     }
     addSearchButton() {
         const $this = this;
@@ -32235,18 +32287,20 @@ class Application extends PIXI.Application {
                 Graph.interactive = true;
                 Graph.alpha = 0;
                 Graph.mouseover = function () {
+                    $this._graphicHovered = true;
                     if (!$this.modeSearh) {
                         this.alpha = 1;
                     }
                     let description = "";
+                    (G.info.image && G.info.image.hasOwnProperty('small')) ? description += "<p><img class=\"img-fluid\" src='" + G.info.image.small + "'></p>" : "";
                     (G.info.reference) ? description += "<p>" + G.info.reference + "</p>" : "";
+                    (!G.info.reference && G.info.title) ? description += "<p>" + G.info.title + "</p>" : "";
                     (G.info.surface_terrain) ? description += "<p><b>Surface du lot:</b> " + G.info.surface_terrain + "</p>" : "";
                     (G.info.surface_habitable) ? description += "<p><b>Surface TT:</b> " + G.info.surface_habitable + "</p>" : "";
                     (G.info.etage) ? description += "<p><b>Niveaux:</b> " + G.info.etage + "</p>" : "";
                     description += "<p>Cliquer sur le bien pour télécharger le PDF</p>";
-                    (G.info.image) ? description += "<p><img src='" + G.info.image.small + "'></p>" : "";
                     if (description) {
-                        $("canvas[title]").tooltip("option", "content", "<div style='text-align: center'>" + description + "</div>");
+                        $("canvas[title]").tooltip("option", "content", "<div>" + description + "</div>");
                         $('body').removeClass('tooltip-hidden');
                     }
                 };
@@ -32254,8 +32308,12 @@ class Application extends PIXI.Application {
                     if (!$this.modeSearh) {
                         this.alpha = 0;
                     }
-                    $("canvas[title]").tooltip("option", "content", ' ');
-                    $('body').addClass('tooltip-hidden');
+                    $this._graphicHovered = false;
+                    setTimeout(() => {
+                        if (!$this._graphicHovered) {
+                            $('body').addClass('tooltip-hidden');
+                        }
+                    }, 100);
                 };
                 Graph.pointerdown = function (e) {
                     // console.dir(this);
@@ -32264,16 +32322,22 @@ class Application extends PIXI.Application {
                     // $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
                     $(ModalDetail).modal({ show: true }).on("shown.bs.modal", function (e) {
                         //picture-container
-                        $(this).find(".picture-container").html("<img src='" + G.info.image.large + "' class=\"img-fluid\">");
+                        (G.info.image && G.info.image.hasOwnProperty('large')) ? $(this).find(".picture-container").html("<img src='" + G.info.image.large + "' class=\"img-fluid\">") : '';
                         $(this).find(".modal-title").html(G.info.title);
                         let descriptionDetail = "";
                         (G.info.reference) ? descriptionDetail += "<p>" + G.info.reference + "</p>" : "";
+                        (!G.info.reference && G.info.title) ? descriptionDetail += "<p>" + G.info.title + "</p>" : "";
                         (G.info.surface_terrain) ? descriptionDetail += "<p><b>Surface du lot:</b> " + G.info.surface_terrain + "</p>" : "";
                         (G.info.surface_habitable) ? descriptionDetail += "<p><b>Surface TT:</b> " + G.info.surface_habitable + "</p>" : "";
                         (G.info.etage) ? descriptionDetail += "<p><b>Niveaux:</b> " + G.info.etage + "</p>" : "";
+                        (G.info.landUse) ? descriptionDetail += "<p><b>Lots:</b> " + G.info.landUse + "</p>" : "";
+                        (G.info.cuffar) ? descriptionDetail += "<p><b>Cuffar:</b> " + G.info.cuffar + "</p>" : "";
+                        (G.info.cosCoverage) ? descriptionDetail += "<p><b>CosCoverage:</b> " + G.info.cosCoverage + "</p>" : "";
+                        (G.info.emprise) ? descriptionDetail += "<p><b>Emprise:</b> " + G.info.emprise + "</p>" : "";
+                        (G.info.elevation) ? descriptionDetail += "<p><b>Elevation:</b> " + G.info.elevation + "</p>" : "";
                         if (G.info.pdfDownloadLink) {
                             let [firstPdf] = G.info.pdfDownloadLink;
-                            (firstPdf) ? descriptionDetail += `<a href="${firstPdf}" target="blank" class="btn btn-success col-12"><i class="fa fa-download" aria-hidden="true"></i>Cliquer pour télécharger le PDF</a>` : "";
+                            (firstPdf) ? descriptionDetail += `<a href="${firstPdf}" target="blank" class="btn btn-success col-12 no-decoration"><i class="fa fa-download" aria-hidden="true"></i>Cliquer pour télécharger le PDF</a>` : "";
                         }
                         $(this).find(".description").html(descriptionDetail);
                     }).on("hidden.bs.modal", function (e) {
@@ -32368,8 +32432,8 @@ class Application extends PIXI.Application {
         const $this = this;
         if (coords.length) {
             const newGraphicObj = new PIXI.Graphics();
-            newGraphicObj.beginFill(0x0000ff, 0.5);
-            newGraphicObj.lineStyle(1, 0x0000ff, 1);
+            newGraphicObj.beginFill(0xc10000, 1);
+            newGraphicObj.lineStyle(1, 0xc10000, 1);
             let firstCoord = [];
             coords.map((e) => {
                 const [x, y] = e;
@@ -32480,6 +32544,8 @@ class Application extends PIXI.Application {
         $this.sprites.fulscreenIcon.x = $this.width - 150;
         $this.sprites.fulscreenIcon.y = $this.height - 150;
         $this.addButtons();
+        $this.PowredByText.x = $this.width - 200;
+        $this.PowredByText.y = $this.height - 50;
         // Update the renderer dimensions
         let width = Math.ceil($this.width * ratio);
         let height = Math.ceil($this.height * ratio);

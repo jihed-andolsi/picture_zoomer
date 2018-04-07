@@ -5,5 +5,51 @@
     </head>
     <body class="tooltip-hidden">
         <div id="container"></div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+        <script>
+            var configPlanManager = {
+                showButtonPlans: false,
+                size: [1200, 800],
+                sizePhone: [window.innerWidth, window.innerHeight],
+                fullSizeShow: true,
+                fullScreenButton: true,
+                showSearchButton: false,
+                searchFormId: 'form-search-plan',
+                backgroundMultiple: false,
+                sprites: [
+                    {"name": "background", "url": "./assets/pictures/gfh.jpg", "x": 0, "y": 0},
+                    /*{"name": "background_1", "url": "./assets/pictures/gfh/gfh_01.jpg", "x": 0, "y": 0},
+                    {"name": "background_2", "url": "./assets/pictures/gfh/gfh_02.jpg", "x": 1349, "y": 0},
+                    {"name": "background_3", "url": "./assets/pictures/gfh/gfh_03.jpg", "x": 1349+1348, "y": 0},
+                    {"name": "background_4", "url": "./assets/pictures/gfh/gfh_04.jpg", "x": 1349+1348+1348, "y": 0},
+                    {"name": "background_5", "url": "./assets/pictures/gfh/gfh_05.jpg", "x": 0, "y": 910},
+                    {"name": "background_6", "url": "./assets/pictures/gfh/gfh_06.jpg", "x": 1349, "y": 910},
+                    {"name": "background_7", "url": "./assets/pictures/gfh/gfh_07.jpg", "x": 1349+1348, "y": 910},
+                    {"name": "background_8", "url": "./assets/pictures/gfh/gfh_08.jpg", "x": 1349+1348+1348, "y": 910},
+                    {"name": "background_9", "url": "./assets/pictures/gfh/gfh_09.jpg", "x": 0, "y": 910+910},
+                    {"name": "background_10", "url": "./assets/pictures/gfh/gfh_10.jpg", "x": 1349, "y": 910+910},
+                    {"name": "background_11", "url": "./assets/pictures/gfh/gfh_11.jpg", "x": 1349+1348, "y": 910+910},
+                    {"name": "background_12", "url": "./assets/pictures/gfh/gfh_12.jpg", "x": 1349+1348+1348, "y": 910+910},
+                    {"name": "background_13", "url": "./assets/pictures/gfh/gfh_13.jpg", "x": 0, "y": 910+910+910},
+                    {"name": "background_14", "url": "./assets/pictures/gfh/gfh_14.jpg", "x": 1349, "y": 910+910+910},
+                    {"name": "background_15", "url": "./assets/pictures/gfh/gfh_15.jpg", "x": 1349+1348, "y": 910+910+910},
+                    {"name": "background_16", "url": "./assets/pictures/gfh/gfh_16.jpg", "x": 1349+1348+1348, "y": 910+910+910},*/
+                    {"name": "searchIcon", "url": "./assets/pictures/serach-icon.png", "x": 0, "y": 0},
+                    {"name": "fulscreenIcon", "url": "./assets/pictures/fullscreen.png", "x": 0, "y": 0}
+                ],
+                widthExtent: function(width){
+                    return width + 10000
+                },
+                heightExtent: function(height){
+                    return height + 10000
+                },
+                properties: [
+                    {"color": "0x0000ff", "opacity": "0.5", "lineSize": "1", "coords": [[4196, 4501], [4241, 4486], [4266, 4556], [4221, 4571]], "info": {"title": "bien 1", "description": "kablam kablam kablam ", "pieces": "S+1", "surface": "150"}},
+                    {"color": "0x0000ff", "opacity": "0.5", "lineSize": "1", "coords": [[4359.6049459148635,4527.450139703904],[4335.39275837319,4456.173812334034],[4381.912804099327,4440.123036323262],[4405.85294458997,4513.303693050341]], "info": {"title": "bien 2", "description": "kablam kablam kablam ", "pieces": "S+2", "surface": "250"}},
+                    {"color": "0x0000ff", "opacity": "0.5", "lineSize": "1", "coords": [[4428.60277457257,4425.672054001836],[4473.548512783272,4410.209070672467],[4497.876939888147,4481.1326208765095],[4451.900336122154,4496.595604205879]], "info": {"title": "bien 3", "description": "kablam kablam kablam ", "pieces": "S+3", "surface": "400"}}
+                ]
+            };
+        </script>
     </body>
 </html>
