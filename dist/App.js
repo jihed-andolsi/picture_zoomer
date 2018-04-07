@@ -136,6 +136,71 @@ class Application extends PIXI.Application {
     }
     addSearchButton() {
         const $this = this;
+        let selector = '#' + configPlanManager.searchFormId;
+        $(selector).submit(function () {
+            let serializedData = $(this).serializeArray();
+            serializedData = serializedData.filter((e) => e.value);
+            if (serializedData.length) {
+                $this.removeColorFromSprite($this.sprites.background);
+                $this.modeSearh = true;
+                let dataSearch = {};
+                serializedData.map((e) => {
+                    dataSearch[e.name] = e.value;
+                });
+                $this.Graphics.filter((e) => {
+                    let { G: dataGraphic, Graph: obj } = e;
+                    obj.alpha = 0;
+                    let minDistance = 0;
+                    let maxDistance = 0;
+                    let lots = '';
+                    if (dataSearch.hasOwnProperty('minDistance')) {
+                        if (dataSearch.minDistance) {
+                            minDistance = dataSearch.minDistance;
+                        }
+                    }
+                    if (dataSearch.hasOwnProperty('maxDistance')) {
+                        if (dataSearch.maxDistance) {
+                            maxDistance = dataSearch.maxDistance;
+                        }
+                    }
+                    if (dataSearch.hasOwnProperty('lots')) {
+                        if (dataSearch.lots) {
+                            lots = dataSearch.lots;
+                        }
+                    }
+                    if (minDistance && maxDistance) {
+                        let sSurface = dataGraphic.info.surface;
+                        if (!sSurface) {
+                            sSurface = dataGraphic.info.surface_terrain + dataGraphic.info.surface_habitable;
+                        }
+                        let bool = sSurface > minDistance && sSurface < maxDistance;
+                        if (!bool) {
+                            return bool;
+                        }
+                    }
+                    if (lots.toLowerCase() != dataGraphic.info.landUse.toLowerCase() && lots) {
+                        return false;
+                    }
+                    obj.alpha = 1;
+                });
+            }
+            else {
+                $this.removeFiltersFromSprite($this.sprites.background);
+                $this.Graphics.map((e) => {
+                    let { Graph: obj } = e;
+                    obj.alpha = 0;
+                });
+                $this.modeSearh = false;
+            }
+        });
+        $(`${selector} input[name="reinitiliser"]`).click(function () {
+            $this.removeFiltersFromSprite($this.sprites.background);
+            $this.Graphics.map((e) => {
+                let { Graph: obj } = e;
+                obj.alpha = 0;
+            });
+            $this.modeSearh = false;
+        });
         /*if(($this.sprites as any).searchIcon.interactive){
             $this.ContainerButtons.removeChild(($this.sprites as any).searchIcon)
         }*/
@@ -242,7 +307,9 @@ class Application extends PIXI.Application {
         $this.sprites.fulscreenIcon.on("pointerdown", (e) => {
             Fullscreen_1.enableFullscreen();
         });
-        $this.ContainerButtons.addChild($this.sprites.fulscreenIcon);
+        if (configPlanManager.fullScreenButton) {
+            $this.ContainerButtons.addChild($this.sprites.fulscreenIcon);
+        }
     }
     addGraphics() {
         const $this = this;
@@ -259,9 +326,9 @@ class Application extends PIXI.Application {
                     }
                     let description = "";
                     (G.info.reference) ? description += "<p>" + G.info.reference + "</p>" : "";
-                    (G.info.surface_terrain) ? description += "<p><b>Surface lot vérifiée:</b> " + G.info.surface_terrain + "</p>" : "";
-                    (G.info.surface_habitable) ? description += "<p><b>Surface TT Area:</b> " + G.info.surface_habitable + "</p>" : "";
-                    (G.info.etage) ? description += "<p><b>Niveaux Levels:</b> " + G.info.etage + "</p>" : "";
+                    (G.info.surface_terrain) ? description += "<p><b>Surface du lot:</b> " + G.info.surface_terrain + "</p>" : "";
+                    (G.info.surface_habitable) ? description += "<p><b>Surface TT:</b> " + G.info.surface_habitable + "</p>" : "";
+                    (G.info.etage) ? description += "<p><b>Niveaux:</b> " + G.info.etage + "</p>" : "";
                     description += "<p>Cliquer sur le bien pour télécharger le PDF</p>";
                     (G.info.image) ? description += "<p><img src='" + G.info.image.small + "'></p>" : "";
                     if (description) {
@@ -287,9 +354,13 @@ class Application extends PIXI.Application {
                         $(this).find(".modal-title").html(G.info.title);
                         let descriptionDetail = "";
                         (G.info.reference) ? descriptionDetail += "<p>" + G.info.reference + "</p>" : "";
-                        (G.info.surface_terrain) ? descriptionDetail += "<p><b>Surface lot vérifiée:</b> " + G.info.surface_terrain + "</p>" : "";
-                        (G.info.surface_habitable) ? descriptionDetail += "<p><b>Surface TT Area:</b> " + G.info.surface_habitable + "</p>" : "";
-                        (G.info.etage) ? descriptionDetail += "<p><b>Niveaux Levels:</b> " + G.info.etage + "</p>" : "";
+                        (G.info.surface_terrain) ? descriptionDetail += "<p><b>Surface du lot:</b> " + G.info.surface_terrain + "</p>" : "";
+                        (G.info.surface_habitable) ? descriptionDetail += "<p><b>Surface TT:</b> " + G.info.surface_habitable + "</p>" : "";
+                        (G.info.etage) ? descriptionDetail += "<p><b>Niveaux:</b> " + G.info.etage + "</p>" : "";
+                        if (G.info.pdfDownloadLink) {
+                            let [firstPdf] = G.info.pdfDownloadLink;
+                            (firstPdf) ? descriptionDetail += `<a href="${firstPdf}" target="blank" class="btn btn-success col-12"><i class="fa fa-download" aria-hidden="true"></i>Cliquer pour télécharger le PDF</a>` : "";
+                        }
                         $(this).find(".description").html(descriptionDetail);
                     }).on("hidden.bs.modal", function (e) {
                         $(this).remove();
