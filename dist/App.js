@@ -130,7 +130,7 @@ class Application extends PIXI.Application {
         $this.sprites.background.on("pointerdown", (e) => {
             const x = e.data.global.x;
             const y = e.data.global.y;
-            console.log(`Point {${x}, ${y}}`);
+            // console.log(`Point {${x}, ${y}}`);
             if ($this.startDrawing) {
                 const xD3 = $this.getD3X(x);
                 const yD3 = $this.getD3Y(y);
@@ -192,7 +192,7 @@ class Application extends PIXI.Application {
             background.on("pointerdown", (e) => {
                 const x = e.data.global.x;
                 const y = e.data.global.y;
-                console.log(`Point {${x}, ${y}}`);
+                // console.log(`Point {${x}, ${y}}`);
                 if ($this.startDrawing) {
                     const xD3 = $this.getD3X(x);
                     const yD3 = $this.getD3Y(y);
@@ -253,7 +253,7 @@ class Application extends PIXI.Application {
                             return bool;
                         }
                     }
-                    if (lots.toLowerCase() != dataGraphic.info.landUse.toLowerCase() && lots) {
+                    if (lots.toLowerCase() != dataGraphic.info.landUse.name.toLowerCase() && lots && dataGraphic.info.landUse.name.toLowerCase()) {
                         return false;
                     }
                     obj.alpha = 1;
@@ -438,7 +438,7 @@ class Application extends PIXI.Application {
                         (G.info.surface_terrain) ? descriptionDetail += "<div class='col-6'><p><b>Surface du lot:</b> " + G.info.surface_terrain + "</p></div>" : "";
                         (G.info.surface_habitable) ? descriptionDetail += "<div class='col-6'><p><b>Surface TT:</b> " + G.info.surface_habitable + "</p></div>" : "";
                         (G.info.etage) ? descriptionDetail += "<div class='col-6'><p><b>Niveaux:</b> " + G.info.etage + "</p></div>" : "";
-                        (G.info.landUse) ? descriptionDetail += "<div class='col-6'><p><b>Vocation:</b> " + G.info.landUse + "</p></div>" : "";
+                        (G.info.landUse) ? descriptionDetail += "<div class='col-6'><p><b>Vocation:</b> " + G.info.landUse.name + "</p></div>" : "";
                         (G.info.cuffar) ? descriptionDetail += "<div class='col-6'><p><b>Cuffar:</b> " + G.info.cuffar + "</p></div>" : "";
                         (G.info.cosCoverage) ? descriptionDetail += "<div class='col-6'><p><b>CosCoverage:</b> " + G.info.cosCoverage + "</p></div>" : "";
                         (G.info.emprise) ? descriptionDetail += "<div class='col-6'><p><b>Emprise:</b> " + G.info.emprise + "</p></div>" : "";
@@ -481,10 +481,20 @@ class Application extends PIXI.Application {
         let initX = 0;
         let initY = -100;
         let scalInit = .5;
+        if (configPlanManager.hasOwnProperty("initialData")) {
+            initX = configPlanManager.initialData.x;
+            initY = configPlanManager.initialData.y;
+            scalInit = configPlanManager.initialData.k;
+        }
         if (DeviceDetect_1.isMobile()) {
             scalInit = .5;
             initY = -$this.height / 2;
             initX = -$this.width / 2;
+            if (configPlanManager.hasOwnProperty("initialDataMobile")) {
+                initX = configPlanManager.initialDataMobile.x;
+                initY = configPlanManager.initialDataMobile.y;
+                scalInit = configPlanManager.initialDataMobile.k;
+            }
         }
         $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate(initX, initY).scale(scalInit));
         $this.canvas.on("click", () => {
@@ -497,6 +507,7 @@ class Application extends PIXI.Application {
         const y = d3.event.transform.y;
         const k = d3.event.transform.k;
         $this.zoomTrans = d3.event.transform;
+        console.dir(d3.event.transform);
         // let translate = "translate(" + d3.event.translate + ")";
         // let scale = "scale(" + d3.event.scale + ")";
         // $this.canvas.attr("transform", translate + scale);
