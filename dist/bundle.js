@@ -31966,6 +31966,7 @@ class Application extends PIXI.Application {
         this._modeSearh = false;
         this._graphicHovered = false;
         this.PowredByText = null;
+        this.MultipleBackground = [];
         this.Container.zIndex = 0;
         this.ContainerButtons.zIndex = 1;
         this.width = width;
@@ -32077,7 +32078,7 @@ class Application extends PIXI.Application {
     }
     addBackgroundMultiple() {
         const $this = this;
-        [
+        $this.MultipleBackground = [
             [$this.sprites.background_1, 'background_1'],
             [$this.sprites.background_2, 'background_2'],
             [$this.sprites.background_3, 'background_3'],
@@ -32094,12 +32095,31 @@ class Application extends PIXI.Application {
             [$this.sprites.background_14, 'background_14'],
             [$this.sprites.background_15, 'background_15'],
             [$this.sprites.background_16, 'background_16'],
-        ].map((element) => {
+        ];
+        $this.MultipleBackground.map((element) => {
             const $this = this;
             let [background, name] = element;
-            var found = sprites.filter(function (item) { return item.name === name; });
+            let found = sprites.filter(function (item) { return item.name === name; });
             background.x = found[0].x;
             background.y = found[0].y;
+            background.interactive = true;
+            background.on("pointerdown", (e) => {
+                const x = e.data.global.x;
+                const y = e.data.global.y;
+                console.log(`Point {${x}, ${y}}`);
+                if ($this.startDrawing) {
+                    const xD3 = $this.getD3X(x);
+                    const yD3 = $this.getD3Y(y);
+                    $this.newGraphic.push([xD3, yD3]);
+                    $this.Container.removeChild($this.newGraphicObj[$this._counterGraphic]);
+                    $this.newGraphicObj[$this._counterGraphic] = $this.createGraph($this.newGraphic);
+                    $this.Container.addChild($this.newGraphicObj[$this._counterGraphic]);
+                }
+                $this.backgroundClicked = true;
+            });
+            background.mouseover = () => {
+                $('body').addClass('tooltip-hidden');
+            };
             $this.Container.addChild(background);
         });
     }
@@ -32110,7 +32130,7 @@ class Application extends PIXI.Application {
             let serializedData = $(this).serializeArray();
             serializedData = serializedData.filter((e) => e.value);
             if (serializedData.length) {
-                $this.removeColorFromSprite($this.sprites.background);
+                $this.removeColorFromBackground();
                 $this.modeSearh = true;
                 let dataSearch = {};
                 serializedData.map((e) => {
@@ -32154,7 +32174,7 @@ class Application extends PIXI.Application {
                 });
             }
             else {
-                $this.removeFiltersFromSprite($this.sprites.background);
+                $this.addColorToBackground();
                 $this.Graphics.map((e) => {
                     let { Graph: obj } = e;
                     obj.alpha = 0;
@@ -32168,7 +32188,7 @@ class Application extends PIXI.Application {
             }
         }, 3000);
         $(`${selector} input[name="reinitiliser"]`).click(function () {
-            $this.removeFiltersFromSprite($this.sprites.background);
+            $this.addColorToBackground();
             $this.Graphics.map((e) => {
                 let { Graph: obj } = e;
                 obj.alpha = 0;
@@ -32199,7 +32219,7 @@ class Application extends PIXI.Application {
                     let data = $(this).serializeArray();
                     data = data.filter((e) => e.value);
                     if (data.length) {
-                        $this.removeColorFromSprite($this.sprites.background);
+                        $this.addColorToBackground();
                         $this.modeSearh = true;
                         let dataSearch = {};
                         data.map((e) => {
@@ -32252,7 +32272,7 @@ class Application extends PIXI.Application {
                         });
                     }
                     else {
-                        $this.removeFiltersFromSprite($this.sprites.background);
+                        $this.addColorToBackground();
                         $this.Graphics.map((e) => {
                             let { Graph: obj } = e;
                             obj.alpha = 0;
@@ -32560,6 +32580,30 @@ class Application extends PIXI.Application {
         $this.canvas.call($this.zoomHandler).call($this.zoomHandler.transform, d3.zoomIdentity.translate($this.zoomTrans.x, $this.zoomTrans.y).scale($this.zoomTrans.k));
     }
     ;
+    removeColorFromBackground() {
+        const $this = this;
+        if (configPlanManager.backgroundMultiple) {
+            $this.MultipleBackground.map((element) => {
+                let [background] = element;
+                $this.removeColorFromSprite(background);
+            });
+        }
+        else {
+            $this.removeColorFromSprite($this.sprites.background);
+        }
+    }
+    addColorToBackground() {
+        const $this = this;
+        if (configPlanManager.backgroundMultiple) {
+            $this.MultipleBackground.map((element) => {
+                let [background] = element;
+                $this.removeFiltersFromSprite(background);
+            });
+        }
+        else {
+            $this.removeFiltersFromSprite($this.sprites.background);
+        }
+    }
     removeColorFromSprite(sprite) {
         const filter = new PIXI.filters.ColorMatrixFilter();
         sprite.filters = [filter];
