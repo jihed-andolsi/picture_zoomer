@@ -32167,7 +32167,7 @@ class Application extends PIXI.Application {
                             return bool;
                         }
                     }
-                    if (lots.toLowerCase() != dataGraphic.info.landUse.name.toLowerCase() && lots && dataGraphic.info.landUse.name.toLowerCase()) {
+                    if (lots.toLowerCase() != dataGraphic.info.landUse.abbreviation.toLowerCase() && lots) {
                         return false;
                     }
                     obj.alpha = 1;
@@ -32311,7 +32311,7 @@ class Application extends PIXI.Application {
         const Graphics = [];
         graphics.forEach((G, k) => {
             const coords = G.coords;
-            const Graph = $this.createGraph(coords);
+            const Graph = $this.createGraph(coords, G);
             if (Graph) {
                 Graph.interactive = true;
                 Graph.alpha = 0;
@@ -32324,6 +32324,7 @@ class Application extends PIXI.Application {
                     (G.info.image && G.info.image.hasOwnProperty('small')) ? description += "<div class=\"col-12\" style='text-align: center;'><img class=\"img-fluid\" src='" + G.info.image.small + "'></div>" : "";
                     (G.info.reference) ? description += "<div style='text-align:center; color:  #82A7C5;font-weight:  bold;width:  100%;'><span>" + G.info.reference + "</span></div>" : "";
                     (!G.info.reference && G.info.title) ? description += "<div style='text-align:center; color:  #82A7C5;font-weight:  bold;width:  100%;'><span>" + G.info.title + "</span></div>" : "";
+                    (G.info.landUse) ? description += "<p><b>Vocation:</b> " + G.info.landUse.name + "</p>" : "";
                     (G.info.surface_terrain) ? description += "<p><b>Surface du lot:</b> " + G.info.surface_terrain + "</p>" : "";
                     (G.info.surface_habitable) ? description += "<p><b>Surface TT:</b> " + G.info.surface_habitable + "</p>" : "";
                     (G.info.etage) ? description += "<p><b>Niveaux:</b> " + G.info.etage + "</p>" : "";
@@ -32348,7 +32349,7 @@ class Application extends PIXI.Application {
                         (G.info.image && G.info.image.hasOwnProperty('large')) ? $(this).find(".picture-container").html("<img src='" + G.info.image.large + "' class=\"img-fluid\">") : '';
                         $(this).find(".modal-title").html("<span>" + G.info.title + "</span>");
                         let descriptionDetail = "";
-                        (G.info.reference) ? descriptionDetail += "<div class='col-12'><p><b>Reference:</b>" + G.info.reference + "</p></div>" : "";
+                        // (G.info.reference) ? descriptionDetail += "<div class='col-12'><p><b>Reference:</b>" + G.info.reference +"</p></div>" : "";
                         (G.info.surface_terrain) ? descriptionDetail += "<div class='col-6'><p><b>Surface du lot:</b> " + G.info.surface_terrain + "</p></div>" : "";
                         (G.info.surface_habitable) ? descriptionDetail += "<div class='col-6'><p><b>Surface TT:</b> " + G.info.surface_habitable + "</p></div>" : "";
                         (G.info.etage) ? descriptionDetail += "<div class='col-6'><p><b>Niveaux:</b> " + G.info.etage + "</p></div>" : "";
@@ -32421,7 +32422,7 @@ class Application extends PIXI.Application {
         const y = d3.event.transform.y;
         const k = d3.event.transform.k;
         $this.zoomTrans = d3.event.transform;
-        console.dir(d3.event.transform);
+        // console.dir(d3.event.transform);
         // let translate = "translate(" + d3.event.translate + ")";
         // let scale = "scale(" + d3.event.scale + ")";
         // $this.canvas.attr("transform", translate + scale);
@@ -32461,12 +32462,26 @@ class Application extends PIXI.Application {
             $this.Container.removeChild(e);
         });
     }
-    createGraph(coords) {
+    createGraph(coords, graphInfo = {}) {
         const $this = this;
         if (coords.length) {
+            let color = 0xc10000;
+            if (configPlanManager.hasOwnProperty('defaultColor')) {
+                if (configPlanManager.defaultColor) {
+                    color = configPlanManager.defaultColor;
+                }
+            }
+            if (graphInfo.hasOwnProperty('info')) {
+                if (graphInfo.info.landUse) {
+                    if (graphInfo.info.landUse.color) {
+                        color = graphInfo.info.landUse.color;
+                        color = color.replace(/#/gi, "0x");
+                    }
+                }
+            }
             const newGraphicObj = new PIXI.Graphics();
-            newGraphicObj.beginFill(0xc10000, 1);
-            newGraphicObj.lineStyle(1, 0xc10000, 1);
+            newGraphicObj.beginFill(color, 1);
+            newGraphicObj.lineStyle(1, color, 1);
             let firstCoord = [];
             coords.map((e) => {
                 const [x, y] = e;
