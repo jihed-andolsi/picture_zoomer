@@ -2,22 +2,23 @@ var path = require('path');
 var webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 module.exports = {
     entry: './src/App.ts',
     output: {
         pathinfo: true,
-        filename: 'bundle.js',
+        filename: 'bundle.min.js',
         path: path.resolve('./dist')
     },
 
     resolve: {
         // add '.ts' as resolvable extensions
         extensions: ['.js', '.ts', '.json', '.scss', '.css', '/\.(gif|png|jpe?g|svg)$/i', '.html'],
-        alias: {
+        /*alias: {
             'jquery': __dirname + '/src/Assets/jquery-ui-1.12.1/external/jquery/jquery.js',
             'jquery-ui': __dirname + '/src/Assets/jquery-ui-1.12.1/jquery-ui.js',
-        }
+        }*/
     },
     devtool: 'source-map',
     plugins: [
@@ -25,20 +26,19 @@ module.exports = {
             {
                 from: './src/assets',
                 to:'./assets'
-            },
+            }
+            /*,
             {
                 from: './src/Components',
                 to:'./Components'
-            }
+            }*/
         ]),
         new HtmlWebpackPlugin({
             template: './index.html',
             inject: 'body'
         }),
-        new webpack.optimize.UglifyJsPlugin({
-            include: /\.min\.js$/,
-            minimize: true
-        })
+        new UglifyJsPlugin(),
+        new webpack.BannerPlugin('Powred by tunisian joker jihed_andoulsi@hotmail.fr')
     ],
 
     module: {

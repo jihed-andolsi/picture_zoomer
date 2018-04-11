@@ -251,14 +251,21 @@ export default class Application extends PIXI.Application {
                 $this.modeSearh = true;
                 let dataSearch = {};
                 serializedData.map((e) => {
-                    dataSearch[e.name] = e.value;
+                    if(e.name == "lots"){
+                        if(!dataSearch.hasOwnProperty(e.name)){
+                            dataSearch[e.name] = [];
+                        }
+                        dataSearch[e.name].push(e.value)
+                    } else {
+                        dataSearch[e.name] = e.value;
+                    }
                 });
                 $this.Graphics.filter((e) => {
                     let {G: dataGraphic, Graph: obj} = e;
                     obj.alpha = 0;
                     let minDistance = 0;
                     let maxDistance = 0;
-                    let lots = '';
+                    let lots = [];
                     if(dataSearch.hasOwnProperty('minDistance')){
                         if((dataSearch as any).minDistance){
                             minDistance = (dataSearch as any).minDistance;
@@ -277,15 +284,18 @@ export default class Application extends PIXI.Application {
                     if(minDistance && maxDistance){
                         let sSurface = dataGraphic.info.surface;
                         if(!sSurface){
-                            sSurface = dataGraphic.info.surface_terrain + dataGraphic.info.surface_habitable;
+                            sSurface = /*dataGraphic.info.surface_terrain + */dataGraphic.info.surface_habitable;
                         }
                         let bool = sSurface>minDistance && sSurface <maxDistance;
                         if(!bool){
                             return bool;
                         }
                     }
-                    if(lots.toLowerCase() != dataGraphic.info.landUse.abbreviation.toLowerCase() && lots){
-                        return false;
+                    if(lots){
+                        let foundGraph = lots.filter(function(item) { return item.toLowerCase() === dataGraphic.info.landUse.abbreviation.toLowerCase(); });
+                        if(!foundGraph.length){
+                            return false;
+                        }
                     }
                     obj.alpha = 1;
                 })
@@ -465,6 +475,7 @@ export default class Application extends PIXI.Application {
                     // $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
                     $(ModalDetail).modal({show: true}).on("shown.bs.modal", function (e) {
                         //picture-container
+                        console.dir(G.info);
                         (G.info.image && G.info.image.hasOwnProperty('large')) ? $(this).find(".picture-container").html("<img src='"+G.info.image.large+"' class=\"img-fluid\">"): '';
                         $(this).find(".modal-title").html("<span>" + G.info.title + "</span>");
                         let descriptionDetail = "";
@@ -591,40 +602,42 @@ export default class Application extends PIXI.Application {
 
     private createGraph(coords, graphInfo = {}) {
         const $this = this;
-        if (coords.length) {
-            let color = 0xc10000;
-            if(configPlanManager.hasOwnProperty('defaultColor')){
-                if(configPlanManager.defaultColor){
-                    color = configPlanManager.defaultColor;
-                }
-            }
-            if((graphInfo as any).hasOwnProperty('info')){
-                if((graphInfo as any).info.landUse){
-                    if((graphInfo as any).info.landUse.color){
-                        color = (graphInfo as any).info.landUse.color;
-                        color = (color as any).replace(/#/gi, "0x");
+        if(coords){
+            if (coords.length) {
+                let color = 0xc10000;
+                if(configPlanManager.hasOwnProperty('defaultColor')){
+                    if(configPlanManager.defaultColor){
+                        color = configPlanManager.defaultColor;
                     }
                 }
-            }
-            const newGraphicObj = new PIXI.Graphics();
-            newGraphicObj.beginFill(color, 1);
-            newGraphicObj.lineStyle(1, color, 1);
-            let firstCoord = [];
-            coords.map((e) => {
-                const [x, y] = e;
-                if (!firstCoord.length) {
-                    firstCoord = e;
-                    newGraphicObj.moveTo(x, y);
-                } else {
-                    newGraphicObj.lineTo(x, e[1]);
+                if((graphInfo as any).hasOwnProperty('info')){
+                    if((graphInfo as any).info.landUse){
+                        if((graphInfo as any).info.landUse.color){
+                            color = (graphInfo as any).info.landUse.color;
+                            color = (color as any).replace(/#/gi, "0x");
+                        }
+                    }
                 }
-            });
-            if (firstCoord) {
-                const [firstX, firstY] = firstCoord;
-                newGraphicObj.lineTo(firstX, firstY);
-                newGraphicObj.endFill();
+                const newGraphicObj = new PIXI.Graphics();
+                newGraphicObj.beginFill(color, 1);
+                newGraphicObj.lineStyle(1, color, 1);
+                let firstCoord = [];
+                coords.map((e) => {
+                    const [x, y] = e;
+                    if (!firstCoord.length) {
+                        firstCoord = e;
+                        newGraphicObj.moveTo(x, y);
+                    } else {
+                        newGraphicObj.lineTo(x, e[1]);
+                    }
+                });
+                if (firstCoord) {
+                    const [firstX, firstY] = firstCoord;
+                    newGraphicObj.lineTo(firstX, firstY);
+                    newGraphicObj.endFill();
+                }
+                return newGraphicObj;
             }
-            return newGraphicObj;
         }
         return false;
     }

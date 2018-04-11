@@ -20,7 +20,8 @@
     "json-loader": "^0.5.7",
     "script-loader": "^0.7.2",
     "style-loader": "^0.20.3",
-    "to-string-loader": "^1.1.5"
+    "to-string-loader": "^1.1.5",
+    "uglifyjs-webpack-plugin": "^1.2.4"
   },
   "dependencies": {
     "autoprefixer": "^8.2.0",
