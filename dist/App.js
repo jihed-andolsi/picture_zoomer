@@ -53,6 +53,7 @@ class Application extends PIXI.Application {
         this._graphicHovered = false;
         this.PowredByText = null;
         this.MultipleBackground = [];
+        this.isZooming = false;
         this.Container.zIndex = 0;
         this.ContainerButtons.zIndex = 1;
         this.width = width;
@@ -115,6 +116,7 @@ class Application extends PIXI.Application {
             $this.initZoomAction();
             $this.addPowredBy();
             $this.resizeCanvas();
+            $this.Container.convertTo2d();
         });
     }
     addBackground() {
@@ -416,25 +418,28 @@ class Application extends PIXI.Application {
                 Graph.alpha = 0;
                 Graph.buttonMode = true;
                 Graph.mouseover = function () {
-                    if (!$this.modeSearh) {
+                    if (!$this.modeSearh && !$this.startDrawing) {
                         this.alpha = 1;
                     }
                     let description = "";
-                    (G.info.image && G.info.image.hasOwnProperty('small')) ? description += "<div class=\"col-12\" style='text-align: center;'><img class=\"img-fluid\" src='" + G.info.image.small + "'></div>" : "";
-                    (G.info.reference) ? description += "<div style='text-align:center; color:  #82A7C5;font-weight:  bold;width:  100%;'><span>" + G.info.reference + "</span></div>" : "";
-                    (!G.info.reference && G.info.title) ? description += "<div style='text-align:center; color:  #82A7C5;font-weight:  bold;width:  100%;'><span>" + G.info.title + "</span></div>" : "";
-                    (G.info.landUse) ? description += "<p><b>Vocation:</b> " + G.info.landUse.name + "</p>" : "";
-                    (G.info.surface_terrain) ? description += "<p><b>Surface du lot:</b> " + G.info.surface_terrain + "</p>" : "";
-                    (G.info.surface_habitable) ? description += "<p><b>Surface TT:</b> " + G.info.surface_habitable + "</p>" : "";
-                    (G.info.etage) ? description += "<p><b>Niveaux:</b> " + G.info.etage + "</p>" : "";
+                    let picture = (configPlanManager.hasOwnProperty("pictureNotFoundUrl")) ? configPlanManager.pictureNotFoundUrl : "";
+                    picture = (G.info.image && G.info.image.hasOwnProperty('small')) ? G.info.image.small : picture;
+                    (picture) ? description += "<div class=\"col-6 pr-0\"><img class=\"img-fluid\" src='" + picture + "'></div>" : "";
+                    description += "<div class=\"col-6 pl-0\">";
+                    (G.info.reference) ? description += "<p style='color:  #fff;font-weight:  bold;'>" + G.info.reference + "</p>" : "";
+                    (!G.info.reference && G.info.title) ? description += "<span style='color:  #fff;font-weight:  bold;'>" + G.info.title + "</span>" : "";
+                    (G.info.landUse) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff; display:block;\">Vocation:</b> " + G.info.landUse.name + "</p>" : "";
+                    (G.info.surface_terrain) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;display:block\">Surface du lot:</b> " + G.info.surface_terrain + " <span>m²<span></p>" : "";
+                    (G.info.surface_habitable) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;display:block\">Surface TT:</b> " + G.info.surface_habitable + " <span>m²<span></p>" : "";
                     description += "<p style='color: #d1a9a4'>Cliquer sur le bien pour télécharger le PDF</p>";
-                    if (description) {
-                        $("canvas[title]").tooltip("option", "content", "<div>" + description + "</div>");
+                    description += "</div>";
+                    if (description && !$this.startDrawing) {
+                        $("canvas[title]").tooltip("option", "content", "<div class=\"row\">" + description + "</div>");
                         $('body').removeClass('tooltip-hidden');
                     }
                 };
                 Graph.mouseout = function () {
-                    if (!$this.modeSearh) {
+                    if (!$this.modeSearh && !$this.startDrawing) {
                         this.alpha = 0;
                     }
                 };
@@ -443,29 +448,30 @@ class Application extends PIXI.Application {
                     // let xx = this._bounds;
                     // console.dir(xx);
                     // $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
-                    $(ModalDetail).modal({ show: true }).on("shown.bs.modal", function (e) {
-                        //picture-container
-                        console.dir(G.info);
-                        (G.info.image && G.info.image.hasOwnProperty('large')) ? $(this).find(".picture-container").html("<img src='" + G.info.image.large + "' class=\"img-fluid\">") : '';
-                        $(this).find(".modal-title").html("<span>" + G.info.title + "</span>");
-                        let descriptionDetail = "";
-                        // (G.info.reference) ? descriptionDetail += "<div class='col-12'><p><b>Reference:</b>" + G.info.reference +"</p></div>" : "";
-                        (G.info.surface_terrain) ? descriptionDetail += "<div class='col-6'><p><b>Surface du lot:</b> " + G.info.surface_terrain + "</p></div>" : "";
-                        (G.info.surface_habitable) ? descriptionDetail += "<div class='col-6'><p><b>Surface TT:</b> " + G.info.surface_habitable + "</p></div>" : "";
-                        (G.info.etage) ? descriptionDetail += "<div class='col-6'><p><b>Niveaux:</b> " + G.info.etage + "</p></div>" : "";
-                        (G.info.landUse) ? descriptionDetail += "<div class='col-6'><p><b>Vocation:</b> " + G.info.landUse.name + "</p></div>" : "";
-                        (G.info.cuffar) ? descriptionDetail += "<div class='col-6'><p><b>Cuffar:</b> " + G.info.cuffar + "</p></div>" : "";
-                        (G.info.cosCoverage) ? descriptionDetail += "<div class='col-6'><p><b>CosCoverage:</b> " + G.info.cosCoverage + "</p></div>" : "";
-                        (G.info.emprise) ? descriptionDetail += "<div class='col-6'><p><b>Emprise:</b> " + G.info.emprise + "</p></div>" : "";
-                        (G.info.elevation) ? descriptionDetail += "<div class='col-6'><p><b>Elevation:</b> " + G.info.elevation + "</p></div>" : "";
-                        if (G.info.pdfDownloadLink) {
-                            let [firstPdf] = G.info.pdfDownloadLink;
-                            (firstPdf) ? descriptionDetail += `<a href="${firstPdf}" target="blank" class="btn btn-success col-12 no-decoration">Cliquer pour télécharger le PDF</a>` : "";
-                        }
-                        $(this).find(".description").html(descriptionDetail);
-                    }).on("hidden.bs.modal", function (e) {
-                        $(this).remove();
-                    });
+                    if (configPlanManager.hasOwnProperty("modalPropertyDetailId") && !$this.isZooming) {
+                        $("#" + configPlanManager.modalPropertyDetailId).modal({ show: true }).on("shown.bs.modal", function (e) {
+                            console.dir(G.info);
+                            $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a").addClass("d-none");
+                            let picture = (configPlanManager.hasOwnProperty("pictureNotFoundUrl")) ? configPlanManager.pictureNotFoundUrl : "";
+                            picture = (G.info.image && G.info.image.hasOwnProperty('small')) ? G.info.image.small : picture;
+                            (picture) ? $(this).find("img.img-property").attr("src", picture).removeClass("d-none") : "";
+                            $(this).find(".reference-property").html(G.info.title).removeClass("d-none");
+                            (G.info.surface_terrain) ? $(this).find(".surface-lot b").html(G.info.surface_terrain + " m²").parent().removeClass("d-none") : "";
+                            (G.info.surface_habitable) ? $(this).find(".surface-total b").html(G.info.surface_habitable + " m²").parent().removeClass("d-none") : "";
+                            (G.info.etage) ? $(this).find(".nbr-etage b").html(G.info.etage).parent().removeClass("d-none") : "";
+                            (G.info.landUse) ? $(this).find(".voaction b").html(G.info.landUse.name).parent().removeClass("d-none") : "";
+                            (G.info.cuffar) ? $(this).find(".cuffar b").html(G.info.cuffar).parent().removeClass("d-none") : "";
+                            (G.info.cosCoverage) ? $(this).find(".cos b").html(G.info.cosCoverage).parent().removeClass("d-none") : "";
+                            (G.info.emprise) ? $(this).find(".emprise b").html(G.info.emprise).parent().removeClass("d-none") : "";
+                            (G.info.elevation) ? $(this).find(".niveau b").html(G.info.elevation).parent().removeClass("d-none") : "";
+                            if (G.info.pdfDownloadLink) {
+                                let [firstPdf] = G.info.pdfDownloadLink;
+                                (firstPdf) ? $(this).find(".download-pdf a").attr("href", firstPdf).removeClass("d-none") : "";
+                            }
+                        }).on("hidden.bs.modal", function (e) {
+                            $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a").addClass("d-none");
+                        });
+                    }
                     if ($this.isMobile) {
                     }
                 };
@@ -484,9 +490,16 @@ class Application extends PIXI.Application {
         $this.zoomHandler = d3.zoom()
             .scaleExtent([.1, 8])
             .translateExtent([[0, 0], [$this.widthExtentMaximum, $this.heightExtentMaximum]])
+            .on("start", () => {
+            return $this.startZoomActions($this);
+        })
             .on("zoom", () => {
             return $this.zoomActions($this);
-        }).filter(() => {
+        })
+            .on("end", () => {
+            return $this.endZoomActions($this);
+        })
+            .filter(() => {
             return !$this.D3Interval;
         });
         $this.initZommActionFunctionalities();
@@ -529,6 +542,14 @@ class Application extends PIXI.Application {
         $this.Container.scale.set(k);
         $this.Container.position.set(x, y);
     }
+    startZoomActions($this) {
+        // console.dir("start zoom");
+        $this.isZooming = true;
+    }
+    endZoomActions($this) {
+        // console.dir("end zoom");
+        $this.isZooming = false;
+    }
     /*private zoomTo(x: number, y: number, k: number, graph) {
      const $this = this;
      const trans = d3.zoomTransform($this.canvas.node());
@@ -567,9 +588,15 @@ class Application extends PIXI.Application {
         if (coords) {
             if (coords.length) {
                 let color = 0xc10000;
+                let opacity = .5;
                 if (configPlanManager.hasOwnProperty('defaultColor')) {
                     if (configPlanManager.defaultColor) {
                         color = configPlanManager.defaultColor;
+                    }
+                }
+                if (configPlanManager.hasOwnProperty('defaultOpacity')) {
+                    if (configPlanManager.defaultOpacity) {
+                        opacity = configPlanManager.defaultOpacity;
                     }
                 }
                 if (graphInfo.hasOwnProperty('info')) {
@@ -581,8 +608,8 @@ class Application extends PIXI.Application {
                     }
                 }
                 const newGraphicObj = new PIXI.Graphics();
-                newGraphicObj.beginFill(color, 1);
-                newGraphicObj.lineStyle(3, 0x000000, 1);
+                newGraphicObj.beginFill(color, opacity);
+                newGraphicObj.lineStyle(3, 0x000000, opacity);
                 let firstCoord = [];
                 coords.map((e) => {
                     const [x, y] = e;
@@ -616,7 +643,11 @@ class Application extends PIXI.Application {
         let height = 50;
         let x = 10;
         let y = $this.height - height - 20;
-        const b = new Button_1.default(width, height, x, y, "Start drawing", null);
+        let txt = "Start drawing";
+        if ($this.startDrawing) {
+            let txt = "Stop drawing";
+        }
+        const b = new Button_1.default(width, height, x, y, txt, null);
         $this.stage.addChild($this.ContainerButtons);
         //b.buttonMode = true;
         b.on("click", () => {
