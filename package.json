@@ -41,7 +41,6 @@
     "node-sass": "^4.8.3",
     "npm": "^5.8.0",
     "pixi-filters": "^2.6.0",
-    "pixi-projection": "^0.1.9",
     "pixi-viewport": "^1.4.0",
     "pixi.js": "^4.7.0",
     "popper.js": "^1.14.1",

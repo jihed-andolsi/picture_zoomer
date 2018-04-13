@@ -116,7 +116,6 @@ class Application extends PIXI.Application {
             $this.initZoomAction();
             $this.addPowredBy();
             $this.resizeCanvas();
-            $this.Container.convertTo2d();
         });
     }
     addBackground() {
