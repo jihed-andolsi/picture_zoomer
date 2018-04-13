@@ -66,8 +66,8 @@ export default class Application extends PIXI.Application {
 
     constructor(selectorId, width, height) {
         super(width, height, {transparent: true, autoResize: true});
-        (this.Container as any).zIndex = 0;
-        (this.ContainerButtons as any).zIndex = 1;
+        this.Container.zIndex = 0;
+        this.ContainerButtons.zIndex = 1;
         this.width = width;
         this.height = height;
         this.widthExtentMaximum = configPlanManager.widthExtent(this.width);
