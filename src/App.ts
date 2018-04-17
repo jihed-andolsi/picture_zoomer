@@ -483,7 +483,7 @@ export default class Application extends PIXI.Application {
                     if(configPlanManager.hasOwnProperty("modalPropertyDetailId") && !$this.isZooming){
                         $("#" + configPlanManager.modalPropertyDetailId).modal({show: true}).on("shown.bs.modal", function (e) {
                             console.dir(G.info);
-                            $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a").addClass("d-none");
+                            $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a, .description").addClass("d-none");
                             let picture = (configPlanManager.hasOwnProperty("pictureNotFoundUrl")) ? configPlanManager.pictureNotFoundUrl : "";
                             picture = (G.info.image && G.info.image.hasOwnProperty('small')) ? G.info.image.small : picture;
                             (picture) ? $(this).find("img.img-property").attr("src", picture).removeClass("d-none"): "";
@@ -496,12 +496,13 @@ export default class Application extends PIXI.Application {
                             (G.info.cosCoverage) ? $(this).find(".cos b").html(G.info.cosCoverage).parent().removeClass("d-none") : "";
                             (G.info.emprise) ? $(this).find(".emprise b").html(G.info.emprise).parent().removeClass("d-none") : "";
                             (G.info.elevation) ?  $(this).find(".niveau b").html(G.info.elevation).parent().removeClass("d-none") : "";
+                            (G.info.description) ?  $(this).find(".description").html(G.info.description).removeClass("d-none") : "";
                             if(G.info.pdfDownloadLink){
                                 let [firstPdf] = G.info.pdfDownloadLink;
                                 (firstPdf) ? $(this).find(".download-pdf a").attr("href", firstPdf).removeClass("d-none") : "";
                             }
                         }).on("hidden.bs.modal", function (e) {
-                            $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a").addClass("d-none");
+                            $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a, .description").addClass("d-none");
                         });
                     }
                     if ($this.isMobile) {
