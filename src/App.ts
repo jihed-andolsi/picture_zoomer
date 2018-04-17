@@ -454,13 +454,16 @@ export default class Application extends PIXI.Application {
                     picture = (G.info.image && G.info.image.hasOwnProperty('small')) ? G.info.image.small : picture;
                     (picture) ? description += "<div class=\"col-6 pr-0\"><img class=\"img-fluid\" src='"+picture+"'></div>" : "";
 
-                    description += "<div class=\"col-6 pl-0\">";
+                    description += "<div class=\"col-6\">";
                     (G.info.reference) ? description += "<p style='color:  #fff;font-weight:  bold;'>" + G.info.reference +"</p>" : "";
                     (!G.info.reference && G.info.title) ? description += "<span style='color:  #fff;font-weight:  bold;'>" + G.info.title +"</span>" : "";
                     (G.info.landUse) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff; display:block;\">Vocation:</b> "+G.info.landUse.name+"</p>" : "";
                     (G.info.surface_terrain) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;display:block\">Surface du lot:</b> "+G.info.surface_terrain+" <span>m²<span></p>" : "";
                     (G.info.surface_habitable) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;display:block\">Surface TT:</b> "+G.info.surface_habitable+" <span>m²<span></p>" : "";
-                    description += "<p style='color: #d1a9a4'>Cliquer sur le bien pour télécharger le PDF</p>";
+                    if(G.info.pdfDownloadLink) {
+                        let [firstPdf] = G.info.pdfDownloadLink;
+                        (firstPdf) ? description += "<p style='color: #d1a9a4'>Cliquer sur le bien pour télécharger le PDF</p>" : "";
+                    }
                     description += "</div>";
                     if(description && !$this.startDrawing){
                         $("canvas[title]").tooltip("option", "content", "<div class=\"row\">" + description + "</div>");
