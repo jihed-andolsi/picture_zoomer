@@ -33,6 +33,7 @@ export default class Application extends PIXI.Application {
     private Customloader = new PIXI.loaders.Loader();
     private Container = new PIXI.Container();
     private ContainerButtons = new PIXI.Container();
+    private filterBackground = new PIXI.filters.ColorMatrixFilter();
     private width: number;
     private height: number;
     private widthExtentMaximum: number;
@@ -111,7 +112,7 @@ export default class Application extends PIXI.Application {
                 this.sprites[e] = new PIXI.Sprite(resources[e].texture);
             });
         });
-        ($this as any ).Customloader.onProgress.add((e) => {
+        ($this as any).Customloader.onProgress.add((e) => {
             let prog = parseInt(e.progress);
             (text as any).text = `Loading ${prog}%`;
         }); // called once per loaded/errored file
@@ -119,7 +120,7 @@ export default class Application extends PIXI.Application {
         // $this.Customloader.onLoad.add(() => { }); // called once per loaded file
         $this.Customloader.onComplete.add((e) => {
             $this.stage.removeChild(text);
-            if(configPlanManager.backgroundMultiple){
+            if (configPlanManager.backgroundMultiple) {
                 $this.addBackgroundMultiple();
             } else {
                 $this.addBackground();
@@ -137,19 +138,20 @@ export default class Application extends PIXI.Application {
 
     private addBackground() {
         const $this = this;
-        if(($this.sprites as any).background.interactive){
+        if (($this.sprites as any).background.interactive) {
             $this.Container.removeChild(($this.sprites as any).background)
         }
         ($this.sprites as any).background.x = 0;
         ($this.sprites as any).background.y = 0;
         ($this.sprites as any).background.interactive = true;
+        ($this.sprites as any).background.filters = [this.filterBackground];
         // const filter = new filters.ColorMatrixFilter();
         //$this.removeColorFromSprite(($this.sprites as any).background);
         ($this.sprites as any).background.on("pointerdown", (e) => {
             const x = e.data.global.x;
             const y = e.data.global.y;
             // console.log(`Point {${x}, ${y}}`);
-            if($this.startDrawing){
+            if ($this.startDrawing) {
                 const xD3 = $this.getD3X(x);
                 const yD3 = $this.getD3Y(y);
                 $this.newGraphic.push([xD3, yD3]);
@@ -166,7 +168,7 @@ export default class Application extends PIXI.Application {
         $this.Container.addChild(($this.sprites as any).background);
     }
 
-    private addPowredBy(){
+    private addPowredBy() {
         const $this = this;
         let style = new PIXI.TextStyle({
             fontFamily: "Arial", // Font Family
@@ -193,7 +195,7 @@ export default class Application extends PIXI.Application {
         $this.ContainerButtons.addChild(this.PowredByText);
     }
 
-    private addBackgroundMultiple(){
+    private addBackgroundMultiple() {
         const $this = this;
         $this.MultipleBackground = [
             [($this.sprites as any).background_1, 'background_1'],
@@ -216,15 +218,18 @@ export default class Application extends PIXI.Application {
         $this.MultipleBackground.map((element) => {
             const $this = this;
             let [background, name] = element;
-            let found = sprites.filter(function(item) { return item.name === name; });
+            let found = sprites.filter(function (item) {
+                return item.name === name;
+            });
             background.x = found[0].x;
             background.y = found[0].y;
             background.interactive = true;
+            background.filters = [this.filterBackground];
             background.on("pointerdown", (e) => {
                 const x = e.data.global.x;
                 const y = e.data.global.y;
                 // console.log(`Point {${x}, ${y}}`);
-                if($this.startDrawing){
+                if ($this.startDrawing) {
                     const xD3 = $this.getD3X(x);
                     const yD3 = $this.getD3Y(y);
                     $this.newGraphic.push([xD3, yD3]);
@@ -244,16 +249,16 @@ export default class Application extends PIXI.Application {
     private addSearchButton() {
         const $this = this;
         let selector = '#' + configPlanManager.searchFormId;
-        $(selector).submit(function(){
+        $(selector).submit(function () {
             let serializedData = $(this).serializeArray();
             serializedData = serializedData.filter((e) => e.value);
-            if(serializedData.length) {
+            if (serializedData.length) {
                 $this.removeColorFromBackground();
                 $this.modeSearh = true;
                 let dataSearch = {};
                 serializedData.map((e) => {
-                    if(e.name == "lots"){
-                        if(!dataSearch.hasOwnProperty(e.name)){
+                    if (e.name == "lots") {
+                        if (!dataSearch.hasOwnProperty(e.name)) {
                             dataSearch[e.name] = [];
                         }
                         dataSearch[e.name].push(e.value)
@@ -267,36 +272,38 @@ export default class Application extends PIXI.Application {
                     let minDistance = 0;
                     let maxDistance = 0;
                     let lots = [];
-                    if(dataSearch.hasOwnProperty('minDistance')){
-                        if((dataSearch as any).minDistance){
+                    if (dataSearch.hasOwnProperty('minDistance')) {
+                        if ((dataSearch as any).minDistance) {
                             minDistance = (dataSearch as any).minDistance;
                         }
                     }
-                    if(dataSearch.hasOwnProperty('maxDistance')){
-                        if((dataSearch as any).maxDistance){
+                    if (dataSearch.hasOwnProperty('maxDistance')) {
+                        if ((dataSearch as any).maxDistance) {
                             maxDistance = (dataSearch as any).maxDistance;
                         }
                     }
-                    if(dataSearch.hasOwnProperty('lots')){
-                        if((dataSearch as any).lots){
+                    if (dataSearch.hasOwnProperty('lots')) {
+                        if ((dataSearch as any).lots) {
                             lots = (dataSearch as any).lots;
                         }
                     }
-                    if(minDistance && maxDistance){
+                    if (minDistance && maxDistance) {
                         let sSurface = dataGraphic.info.surface;
-                        if(!sSurface){
+                        if (!sSurface) {
                             sSurface = /*dataGraphic.info.surface_terrain + */dataGraphic.info.surface_habitable;
                         }
-                        if(sSurface){
-                            let bool = sSurface>minDistance && sSurface <maxDistance;
-                            if(!bool){
+                        if (sSurface) {
+                            let bool = sSurface > minDistance && sSurface < maxDistance;
+                            if (!bool) {
                                 return bool;
                             }
                         }
                     }
-                    if(lots.length){
-                        let foundGraph = lots.filter(function(item) { return item.toLowerCase() === dataGraphic.info.landUse.abbreviation.toLowerCase(); });
-                        if(!foundGraph.length){
+                    if (lots.length) {
+                        let foundGraph = lots.filter(function (item) {
+                            return item.toLowerCase() === dataGraphic.info.landUse.abbreviation.toLowerCase();
+                        });
+                        if (!foundGraph.length) {
                             return false;
                         }
                     }
@@ -312,12 +319,12 @@ export default class Application extends PIXI.Application {
             }
 
         });
-        setTimeout(()=>{
-            if($(`${selector} input[name="do-search"]`).length){
+        setTimeout(() => {
+            if ($(`${selector} input[name="do-search"]`).length) {
                 $(`${selector}`).submit();
             }
         }, 3000);
-        $(`${selector} input[name="reinitiliser"]`).click(function(){
+        $(`${selector} input[name="reinitiliser"]`).click(function () {
             $this.addColorToBackground();
             $this.Graphics.map((e) => {
                 let {Graph: obj} = e;
@@ -325,101 +332,102 @@ export default class Application extends PIXI.Application {
             });
             $this.modeSearh = false;
         });
-        /*if(($this.sprites as any).searchIcon.interactive){
-            $this.ContainerButtons.removeChild(($this.sprites as any).searchIcon)
-        }*/
-        ($this.sprites as any).searchIcon.x = ($this as any).width - 150;
-        ($this.sprites as any).searchIcon.y = 50;
-        ($this.sprites as any).searchIcon.width = 100;
-        ($this.sprites as any).searchIcon.height = 100;
-        ($this.sprites as any).searchIcon.interactive = true;
-        // let filter = new PIXI.filters.OutlineFilter(2, 0x99ff99);
-        // ($this.sprites as any).searchIcon.filters = [filter];
-        ($this.sprites as any).searchIcon.on("pointerdown", (e) => {
-            let mo = null;
-            if ($('.modal.search-modal').length) {
-                mo = $('.modal.search-modal');
-            } else {
-                mo = $(ModalSearch);
-            }
-            $(ModalSearch).attr('data-initilized', 'true');
-            mo.modal({show: true}).on("shown.bs.modal", function (e) {
-                $(this).find('form').submit(function () {
-                    let data = $(this).serializeArray();
-                    data = data.filter((e) => e.value);
-                    if(data.length){
-                        $this.addColorToBackground();
-                        $this.modeSearh = true;
-                        let dataSearch = {};
-                        data.map((e) => {
-                            dataSearch[e.name] = e.value;
-                        })
-                        $this.Graphics.filter((e) => {
-                            let {G: dataGraphic, Graph: obj} = e;
-                            obj.alpha = 0;
-                            if(dataSearch.hasOwnProperty('pieces')){
-                                if(!dataGraphic.info.hasOwnProperty('pieces')){
-                                    return false;
+        if (configPlanManager.showSearchButton) {
+            /*if(($this.sprites as any).searchIcon.interactive){
+                $this.ContainerButtons.removeChild(($this.sprites as any).searchIcon)
+            }*/
+            ($this.sprites as any).searchIcon.x = ($this as any).width - 150;
+            ($this.sprites as any).searchIcon.y = 50;
+            ($this.sprites as any).searchIcon.width = 100;
+            ($this.sprites as any).searchIcon.height = 100;
+            ($this.sprites as any).searchIcon.interactive = true;
+            // let filter = new PIXI.filters.OutlineFilter(2, 0x99ff99);
+            // ($this.sprites as any).searchIcon.filters = [filter];
+            ($this.sprites as any).searchIcon.on("pointerdown", (e) => {
+                let mo = null;
+                if ($('.modal.search-modal').length) {
+                    mo = $('.modal.search-modal');
+                } else {
+                    mo = $(ModalSearch);
+                }
+                $(ModalSearch).attr('data-initilized', 'true');
+                mo.modal({show: true}).on("shown.bs.modal", function (e) {
+                    $(this).find('form').submit(function () {
+                        let data = $(this).serializeArray();
+                        data = data.filter((e) => e.value);
+                        if (data.length) {
+                            $this.removeColorFromBackground();
+                            $this.modeSearh = true;
+                            let dataSearch = {};
+                            data.map((e) => {
+                                dataSearch[e.name] = e.value;
+                            })
+                            $this.Graphics.filter((e) => {
+                                let {G: dataGraphic, Graph: obj} = e;
+                                obj.alpha = 0;
+                                if (dataSearch.hasOwnProperty('pieces')) {
+                                    if (!dataGraphic.info.hasOwnProperty('pieces')) {
+                                        return false;
+                                    }
+                                    if (!dataGraphic.info.pieces) {
+                                        return false;
+                                    }
+                                    let sPieces = "S+1";
+                                    if ((dataSearch as any).pieces == 2) {
+                                        sPieces = "S+2";
+                                    } else if ((dataSearch as any).pieces == 3) {
+                                        sPieces = "S+3";
+                                    }
+                                    if (dataGraphic.info.pieces != sPieces) {
+                                        return false;
+                                    }
                                 }
-                                if(!dataGraphic.info.pieces){
-                                    return false;
-                                }
-                                let sPieces = "S+1";
-                                if((dataSearch as any).pieces == 2){
-                                    sPieces = "S+2";
-                                } else if((dataSearch as any).pieces == 3){
-                                    sPieces = "S+3";
-                                }
-                                if(dataGraphic.info.pieces != sPieces){
-                                    return false;
-                                }
-                            }
-                            if(dataSearch.hasOwnProperty('surface')){
-                                if(!dataGraphic.info.hasOwnProperty('surface')){
-                                    return false;
-                                }
-                                if(!dataGraphic.info.surface){
-                                    return false;
-                                }
+                                if (dataSearch.hasOwnProperty('surface')) {
+                                    if (!dataGraphic.info.hasOwnProperty('surface')) {
+                                        return false;
+                                    }
+                                    if (!dataGraphic.info.surface) {
+                                        return false;
+                                    }
 
-                                let bool = false;
-                                let sSurface = dataGraphic.info.surface;
-                                if((dataSearch as any).surface == 1){
-                                    bool = sSurface>100 && sSurface<200;
-                                } else if((dataSearch as any).surface == 2){
-                                    bool = sSurface>200 && sSurface<300;
-                                } else if((dataSearch as any).surface == 3){
-                                    bool = sSurface>400;
+                                    let bool = false;
+                                    let sSurface = dataGraphic.info.surface;
+                                    if ((dataSearch as any).surface == 1) {
+                                        bool = sSurface > 100 && sSurface < 200;
+                                    } else if ((dataSearch as any).surface == 2) {
+                                        bool = sSurface > 200 && sSurface < 300;
+                                    } else if ((dataSearch as any).surface == 3) {
+                                        bool = sSurface > 400;
+                                    }
+                                    if (!bool) {
+                                        return bool;
+                                    }
                                 }
-                                if(!bool){
-                                    return bool;
-                                }
-                            }
-                            obj.alpha = 1;
+                                obj.alpha = 1;
 
-                        })
-                    } else {
-                        $this.addColorToBackground();
-                        $this.Graphics.map((e) => {
-                            let {Graph: obj} = e;
-                            obj.alpha = 0;
-                        });
-                        $this.modeSearh = false;
-                    }
+                            })
+                        } else {
+                            $this.addColorToBackground();
+                            $this.Graphics.map((e) => {
+                                let {Graph: obj} = e;
+                                obj.alpha = 0;
+                            });
+                            $this.modeSearh = false;
+                        }
+                    });
+                    $(this).find('form select').on('change', function () {
+                        $($(this).parents('form')[0]).submit();
+                    });
+                }).on("hidden.bs.modal", function (e) {
+                    // $(this).remove();
                 });
-                $(this).find('form select').on('change', function(){
-                    $($(this).parents('form')[0]).submit();
-                });
-            }).on("hidden.bs.modal", function (e) {
-                // $(this).remove();
             });
-        });
-        if(configPlanManager.showSearchButton){
+
             $this.ContainerButtons.addChild(($this.sprites as any).searchIcon);
         }
     }
 
-    private addFullscreenButton(){
+    private addFullscreenButton() {
         const $this = this;
         ($this.sprites as any).fulscreenIcon.x = ($this as any).width - 150;
         ($this.sprites as any).fulscreenIcon.y = ($this as any).height - 150;
@@ -430,7 +438,7 @@ export default class Application extends PIXI.Application {
             enableFullscreen();
         });
         ($this.sprites as any).fulscreenIcon.buttonMode = true;
-        if(configPlanManager.fullScreenButton){
+        if (configPlanManager.fullScreenButton) {
             $this.ContainerButtons.addChild(($this.sprites as any).fulscreenIcon);
         }
     }
@@ -446,32 +454,32 @@ export default class Application extends PIXI.Application {
                 (Graph as any).alpha = 0;
                 (Graph as any).buttonMode = true;
                 (Graph as any).mouseover = function () {
-                    if(!$this.modeSearh && !$this.startDrawing) {
+                    if (!$this.modeSearh && !$this.startDrawing) {
                         (this as any).alpha = 1;
                     }
                     let description = "";
                     let picture = (configPlanManager.hasOwnProperty("pictureNotFoundUrl")) ? configPlanManager.pictureNotFoundUrl : "";
                     picture = (G.info.image && G.info.image.hasOwnProperty('small')) ? G.info.image.small : picture;
-                    (picture) ? description += "<div class=\"col-6 pr-0\"><img class=\"img-fluid\" src='"+picture+"'></div>" : "";
+                    (picture) ? description += "<div class=\"col-6 pr-0\"><img class=\"img-fluid\" src='" + picture + "'></div>" : "";
 
                     description += "<div class=\"col-6\">";
-                    (G.info.reference) ? description += "<p style='color:  #fff;font-weight:  bold;'>" + G.info.reference +"</p>" : "";
-                    (!G.info.reference && G.info.title) ? description += "<span style='color:  #fff;font-weight:  bold;'>" + G.info.title +"</span>" : "";
-                    (G.info.landUse) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff; display:block;\">Vocation:</b> "+G.info.landUse.name+"</p>" : "";
-                    (G.info.surface_terrain) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;display:block\">Surface du lot:</b> "+G.info.surface_terrain+" <span>m²<span></p>" : "";
-                    (G.info.surface_habitable) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;display:block\">Surface TT:</b> "+G.info.surface_habitable+" <span>m²<span></p>" : "";
-                    if(G.info.pdfDownloadLink) {
+                    (G.info.reference) ? description += "<p style='color:  #fff;font-weight:  bold;'>" + G.info.reference + "</p>" : "";
+                    (!G.info.reference && G.info.title) ? description += "<span style='color:  #fff;font-weight:  bold;'>" + G.info.title + "</span>" : "";
+                    (G.info.landUse) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff; display:block;\">Vocation:</b> " + G.info.landUse.name + "</p>" : "";
+                    (G.info.surface_terrain) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;display:block\">Surface du lot:</b> " + G.info.surface_terrain + " <span>m²<span></p>" : "";
+                    (G.info.surface_habitable) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;display:block\">Surface TT:</b> " + G.info.surface_habitable + " <span>m²<span></p>" : "";
+                    if (G.info.pdfDownloadLink) {
                         let [firstPdf] = G.info.pdfDownloadLink;
                         (firstPdf) ? description += "<p style='color: #d1a9a4'>Cliquer sur le bien pour télécharger le PDF</p>" : "";
                     }
                     description += "</div>";
-                    if(description && !$this.startDrawing){
+                    if (description && !$this.startDrawing) {
                         $("canvas[title]").tooltip("option", "content", "<div class=\"row\">" + description + "</div>");
                         $('body').removeClass('tooltip-hidden');
                     }
                 };
                 (Graph as any).mouseout = function () {
-                    if(!$this.modeSearh && !$this.startDrawing){
+                    if (!$this.modeSearh && !$this.startDrawing) {
                         (this as any).alpha = 0;
                     }
                 };
@@ -480,13 +488,13 @@ export default class Application extends PIXI.Application {
                     // let xx = this._bounds;
                     // console.dir(xx);
                     // $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
-                    if(configPlanManager.hasOwnProperty("modalPropertyDetailId") && !$this.isZooming){
+                    if (configPlanManager.hasOwnProperty("modalPropertyDetailId") && !$this.isZooming) {
                         $("#" + configPlanManager.modalPropertyDetailId).modal({show: true}).on("shown.bs.modal", function (e) {
                             console.dir(G.info);
                             $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a, .description").addClass("d-none");
                             let picture = (configPlanManager.hasOwnProperty("pictureNotFoundUrl")) ? configPlanManager.pictureNotFoundUrl : "";
                             picture = (G.info.image && G.info.image.hasOwnProperty('small')) ? G.info.image.small : picture;
-                            (picture) ? $(this).find("img.img-property").attr("src", picture).removeClass("d-none"): "";
+                            (picture) ? $(this).find("img.img-property").attr("src", picture).removeClass("d-none") : "";
                             $(this).find(".reference-property").html(G.info.title).removeClass("d-none");
                             (G.info.surface_terrain) ? $(this).find(".surface-lot b").html(G.info.surface_terrain + " m²").parent().removeClass("d-none") : "";
                             (G.info.surface_habitable) ? $(this).find(".surface-total b").html(G.info.surface_habitable + " m²").parent().removeClass("d-none") : "";
@@ -495,9 +503,9 @@ export default class Application extends PIXI.Application {
                             (G.info.cuffar) ? $(this).find(".cuffar b").html(G.info.cuffar).parent().removeClass("d-none") : "";
                             (G.info.cosCoverage) ? $(this).find(".cos b").html(G.info.cosCoverage).parent().removeClass("d-none") : "";
                             (G.info.emprise) ? $(this).find(".emprise b").html(G.info.emprise).parent().removeClass("d-none") : "";
-                            (G.info.elevation) ?  $(this).find(".niveau b").html(G.info.elevation).parent().removeClass("d-none") : "";
-                            (G.info.description) ?  $(this).find(".description").html(G.info.description).removeClass("d-none") : "";
-                            if(G.info.pdfDownloadLink){
+                            (G.info.elevation) ? $(this).find(".niveau b").html(G.info.elevation).parent().removeClass("d-none") : "";
+                            (G.info.description) ? $(this).find(".description").html(G.info.description).removeClass("d-none") : "";
+                            if (G.info.pdfDownloadLink) {
                                 let [firstPdf] = G.info.pdfDownloadLink;
                                 (firstPdf) ? $(this).find(".download-pdf a").attr("href", firstPdf).removeClass("d-none") : "";
                             }
@@ -540,21 +548,22 @@ export default class Application extends PIXI.Application {
             });
         $this.initZommActionFunctionalities();
     }
-    private initZommActionFunctionalities(){
+
+    private initZommActionFunctionalities() {
         const $this = this;
         let initX = 0;
         let initY = -100;
         let scalInit = .5;
-        if(configPlanManager.hasOwnProperty("initialData")){
+        if (configPlanManager.hasOwnProperty("initialData")) {
             initX = configPlanManager.initialData.x;
             initY = configPlanManager.initialData.y;
             scalInit = configPlanManager.initialData.k;
         }
-        if(isMobile()){
+        if (isMobile()) {
             scalInit = .5;
-            initY = - $this.height / 2;
-            initX = - $this.width / 2;
-            if(configPlanManager.hasOwnProperty("initialDataMobile")){
+            initY = -$this.height / 2;
+            initX = -$this.width / 2;
+            if (configPlanManager.hasOwnProperty("initialDataMobile")) {
                 initX = configPlanManager.initialDataMobile.x;
                 initY = configPlanManager.initialDataMobile.y;
                 scalInit = configPlanManager.initialDataMobile.k;
@@ -566,6 +575,7 @@ export default class Application extends PIXI.Application {
             // const y = (d3.event.y - $this.zoomTrans.y) / $this.zoomTrans.k;
         });
     }
+
     private zoomActions($this) {
         const x = d3.event.transform.x;
         const y = d3.event.transform.y;
@@ -628,23 +638,23 @@ export default class Application extends PIXI.Application {
 
     private createGraph(coords, graphInfo = {}) {
         const $this = this;
-        if(coords){
+        if (coords) {
             if (coords.length) {
                 let color = 0xc10000;
                 let opacity = .5;
-                if(configPlanManager.hasOwnProperty('defaultColor')){
-                    if(configPlanManager.defaultColor){
+                if (configPlanManager.hasOwnProperty('defaultColor')) {
+                    if (configPlanManager.defaultColor) {
                         color = configPlanManager.defaultColor;
                     }
                 }
-                if(configPlanManager.hasOwnProperty('defaultOpacity')){
-                    if(configPlanManager.defaultOpacity){
+                if (configPlanManager.hasOwnProperty('defaultOpacity')) {
+                    if (configPlanManager.defaultOpacity) {
                         opacity = configPlanManager.defaultOpacity;
                     }
                 }
-                if((graphInfo as any).hasOwnProperty('info')){
-                    if((graphInfo as any).info.landUse){
-                        if((graphInfo as any).info.landUse.color){
+                if ((graphInfo as any).hasOwnProperty('info')) {
+                    if ((graphInfo as any).info.landUse) {
+                        if ((graphInfo as any).info.landUse.color) {
                             color = (graphInfo as any).info.landUse.color;
                             color = (color as any).replace(/#/gi, "0x");
                         }
@@ -675,62 +685,62 @@ export default class Application extends PIXI.Application {
     }
 
     private addButtons() {
-       const $this = this;
-       if($this.Buttons.length){
-           $this.Buttons.map((e) => {
-               $this.ContainerButtons.removeChild(e);
-           })
-           $this.Buttons = [];
-       }
-       let width = 150;
-       let height = 50;
-       let x = 10;
-       let y = ($this as any).height - height - 20;
-       let txt = "Start drawing";
-       if($this.startDrawing){
-           let txt = "Stop drawing";
-       }
-       const b = new Button(width, height, x, y, txt, null);
-       $this.stage.addChild($this.ContainerButtons);
+        const $this = this;
+        if ($this.Buttons.length) {
+            $this.Buttons.map((e) => {
+                $this.ContainerButtons.removeChild(e);
+            })
+            $this.Buttons = [];
+        }
+        let width = 150;
+        let height = 50;
+        let x = 10;
+        let y = ($this as any).height - height - 20;
+        let txt = "Start drawing";
+        if ($this.startDrawing) {
+            let txt = "Stop drawing";
+        }
+        const b = new Button(width, height, x, y, txt, null);
+        $this.stage.addChild($this.ContainerButtons);
         //b.buttonMode = true;
-       (b as any).on("click", () => {
-           $this.startDrawing = !$this.startDrawing;
-           if (!$this.startDrawing) {
-               (b as any).text.text = "Start drawing";
-               $this._counterGraphic++;
-               if($this.newGraphic.length){
-                   $('#property #coords').html(JSON.stringify($this.newGraphic));
-                   $("#property").modal({show: true});
-               }
-               $this.newGraphic = [];
+        (b as any).on("click", () => {
+            $this.startDrawing = !$this.startDrawing;
+            if (!$this.startDrawing) {
+                (b as any).text.text = "Start drawing";
+                $this._counterGraphic++;
+                if ($this.newGraphic.length) {
+                    $('#property #coords').html(JSON.stringify($this.newGraphic));
+                    $("#property").modal({show: true});
+                }
+                $this.newGraphic = [];
 
-           } else {
-               (b as any).text.text = "Stop drawing";
-           }
-       });
-       $this.Buttons.push(b);
-       width = 250;
-       height = 50;
-       x = 170;
-       y = ($this as any).height - height - 20;
-       const returnLastActionB = new Button(width, height, x, y, "Return to last action", null);
+            } else {
+                (b as any).text.text = "Stop drawing";
+            }
+        });
+        $this.Buttons.push(b);
+        width = 250;
+        height = 50;
+        x = 170;
+        y = ($this as any).height - height - 20;
+        const returnLastActionB = new Button(width, height, x, y, "Return to last action", null);
         //returnLastActionB.buttonMode = true;
-       (returnLastActionB as any).on("click", () => {
-           if ($this.newGraphic.length) {
-               $this.newGraphic.splice(-1, 1);
-               $this.Container.removeChild($this.newGraphicObj[$this._counterGraphic]);
-               $this.newGraphicObj[$this._counterGraphic] = $this.createGraph($this.newGraphic);
-               if ($this.newGraphicObj[$this._counterGraphic]) {
-                   $this.Container.addChild($this.newGraphicObj[$this._counterGraphic]);
-               }
-           }
-       });
-       $this.Buttons.push(returnLastActionB);
-        if(configPlanManager.hasOwnProperty('showButtonPlans')){
-            if(configPlanManager.showButtonPlans){
-               $this.ContainerButtons.addChild(b);
-               $this.ContainerButtons.addChild(returnLastActionB);
-           }
+        (returnLastActionB as any).on("click", () => {
+            if ($this.newGraphic.length) {
+                $this.newGraphic.splice(-1, 1);
+                $this.Container.removeChild($this.newGraphicObj[$this._counterGraphic]);
+                $this.newGraphicObj[$this._counterGraphic] = $this.createGraph($this.newGraphic);
+                if ($this.newGraphicObj[$this._counterGraphic]) {
+                    $this.Container.addChild($this.newGraphicObj[$this._counterGraphic]);
+                }
+            }
+        });
+        $this.Buttons.push(returnLastActionB);
+        if (configPlanManager.hasOwnProperty('showButtonPlans')) {
+            if (configPlanManager.showButtonPlans) {
+                $this.ContainerButtons.addChild(b);
+                $this.ContainerButtons.addChild(returnLastActionB);
+            }
         }
     }
 
@@ -756,13 +766,13 @@ export default class Application extends PIXI.Application {
     };
 
     public rendererResize($this) {
-        if(isMobile() || configPlanManager.fullSizeShow){
+        if (isMobile() || configPlanManager.fullSizeShow) {
             $this.width = window.innerWidth;
             $this.height = window.innerHeight;
         }
-        let ratio = Math.min(window.innerWidth/$this.width,
-            window.innerHeight/$this.height);
-        if(ratio >1){
+        let ratio = Math.min(window.innerWidth / $this.width,
+            window.innerHeight / $this.height);
+        if (ratio > 1) {
             ratio = 1;
         }
         $this.Container.scale.x =
@@ -787,9 +797,9 @@ export default class Application extends PIXI.Application {
 
     };
 
-    private removeColorFromBackground(){
+    private removeColorFromBackground() {
         const $this = this;
-        if(configPlanManager.backgroundMultiple){
+        if (configPlanManager.backgroundMultiple) {
             $this.MultipleBackground.map((element) => {
                 let [background] = element;
                 $this.removeColorFromSprite(background);
@@ -799,9 +809,10 @@ export default class Application extends PIXI.Application {
         }
     }
 
-    private addColorToBackground(){
+    private addColorToBackground() {
+        console.log("addColorToBackground")
         const $this = this;
-        if(configPlanManager.backgroundMultiple){
+        if (configPlanManager.backgroundMultiple) {
             $this.MultipleBackground.map((element) => {
                 let [background] = element;
                 $this.removeFiltersFromSprite(background);
@@ -813,13 +824,11 @@ export default class Application extends PIXI.Application {
     }
 
     private removeColorFromSprite(sprite) {
-        const filter = new PIXI.filters.ColorMatrixFilter();
-        sprite.filters = [filter];
-        filter.desaturate();
+        this.filterBackground.desaturate();
     }
 
     private removeFiltersFromSprite(sprite) {
-        sprite.filters = [];
+        this.filterBackground.reset();
     }
 
     get modeSearh(): boolean {
@@ -834,9 +843,9 @@ export default class Application extends PIXI.Application {
 window.onload = () => {
     (() => {
         let [width, height] = configPlanManager.size;
-        if(isMobile()){
+        if (isMobile()) {
             [width, height] = configPlanManager.sizePhone;
-            if(width > height){
+            if (width > height) {
                 [width, height] = [height, width];
             }
         }
