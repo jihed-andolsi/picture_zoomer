@@ -458,23 +458,24 @@ export default class Application extends PIXI.Application {
                         (this as any).alpha = 1;
                     }
                     let description = "";
+                    (G.info.reference) ? description += "<div class=\"row\"><div class=\"col-12\"><p style=\"color:  #fff;font-weight:  bold;\">" + G.info.reference + "</p></div></div>" : "";
+                    description += "<div class=\"row\">";
                     let picture = (configPlanManager.hasOwnProperty("pictureNotFoundUrl")) ? configPlanManager.pictureNotFoundUrl : "";
                     picture = (G.info.image && G.info.image.hasOwnProperty('small')) ? G.info.image.small : picture;
                     (picture) ? description += "<div class=\"col-6 pr-0\"><img class=\"img-fluid\" src='" + picture + "'></div>" : "";
-
                     description += "<div class=\"col-6\">";
-                    (G.info.reference) ? description += "<p style='color:  #fff;font-weight:  bold;'>" + G.info.reference + "</p>" : "";
                     (!G.info.reference && G.info.title) ? description += "<span style='color:  #fff;font-weight:  bold;'>" + G.info.title + "</span>" : "";
-                    (G.info.landUse) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff; display:block;\">Vocation:</b> " + G.info.landUse.name + "</p>" : "";
-                    (G.info.surface_terrain) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;display:block\">Surface du lot:</b> " + G.info.surface_terrain + " <span>m²<span></p>" : "";
-                    (G.info.surface_habitable) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;display:block\">Surface TT:</b> " + G.info.surface_habitable + " <span>m²<span></p>" : "";
+                    (G.info.landUse) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">Vocation: </b> " + G.info.landUse.name + "</p>" : "";
+                    (G.info.surface_terrain) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">Surface du lot: </b> " + G.info.surface_terrain + " <span>m²<span></p>" : "";
+                    (G.info.surface_habitable) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">Surface totale: </b> " + G.info.surface_habitable + " <span>m²<span></p>" : "";
                     if (G.info.pdfDownloadLink) {
                         let [firstPdf] = G.info.pdfDownloadLink;
                         (firstPdf) ? description += "<p style='color: #d1a9a4'>Cliquer sur le bien pour télécharger le PDF</p>" : "";
                     }
                     description += "</div>";
+                    description += "</div>";
                     if (description && !$this.startDrawing) {
-                        $("canvas[title]").tooltip("option", "content", "<div class=\"row\">" + description + "</div>");
+                        $("canvas[title]").tooltip("option", "content", description);
                         $('body').removeClass('tooltip-hidden');
                     }
                 };
@@ -492,6 +493,8 @@ export default class Application extends PIXI.Application {
                         $("#" + configPlanManager.modalPropertyDetailId).modal({show: true}).on("shown.bs.modal", function (e) {
                             console.dir(G.info);
                             $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a, .description").addClass("d-none");
+                            $(this).find("input[name='property_id']").val(G.info.id);
+                            $(this).find("input[name='property_ref']").val(G.info.title);
                             let picture = (configPlanManager.hasOwnProperty("pictureNotFoundUrl")) ? configPlanManager.pictureNotFoundUrl : "";
                             picture = (G.info.image && G.info.image.hasOwnProperty('small')) ? G.info.image.small : picture;
                             (picture) ? $(this).find("img.img-property").attr("src", picture).removeClass("d-none") : "";
