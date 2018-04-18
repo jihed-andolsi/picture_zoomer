@@ -459,12 +459,13 @@ export default class Application extends PIXI.Application {
                     }
                     let description = "";
                     (G.info.reference) ? description += "<div class=\"row\"><div class=\"col-12\"><p style=\"color:  #fff;font-weight:  bold;\">" + G.info.reference + "</p></div></div>" : "";
+                    (!G.info.reference && G.info.title) ? description += "<div class=\"row\"><div class=\"col-12\"><p style=\"color:  #fff;font-weight:  bold;\">" + G.info.title + "</p></div></div>" : "";
                     description += "<div class=\"row\">";
                     let picture = (configPlanManager.hasOwnProperty("pictureNotFoundUrl")) ? configPlanManager.pictureNotFoundUrl : "";
                     picture = (G.info.image && G.info.image.hasOwnProperty('small')) ? G.info.image.small : picture;
                     (picture) ? description += "<div class=\"col-6 pr-0\"><img class=\"img-fluid\" src='" + picture + "'></div>" : "";
                     description += "<div class=\"col-6\">";
-                    (!G.info.reference && G.info.title) ? description += "<span style='color:  #fff;font-weight:  bold;'>" + G.info.title + "</span>" : "";
+
                     (G.info.landUse) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">Vocation: </b> " + G.info.landUse.name + "</p>" : "";
                     (G.info.surface_terrain) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">Surface du lot: </b> " + G.info.surface_terrain + " <span>m²<span></p>" : "";
                     (G.info.surface_habitable) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">Surface totale: </b> " + G.info.surface_habitable + " <span>m²<span></p>" : "";
