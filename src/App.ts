@@ -24,9 +24,7 @@ const configPlanManager = (window as any).configPlanManager;
 const sprites = configPlanManager.sprites;
 // const graphics = require("./Components/graphics.json");
 const graphics = configPlanManager.properties;
-let ModalDetail = require("./Components/DetailModal.html");
 let ModalSearch = require("./Components/SearchForm.html");
-let ModalAdd = require("./Components/addModal.html");
 // import * as filters from 'pixi-filters';
 
 export default class Application extends PIXI.Application {
@@ -485,12 +483,13 @@ export default class Application extends PIXI.Application {
                         (this as any).alpha = 0;
                     }
                 };
-                (Graph as any).pointerdown = function (e) {
+                Graph.click = function() {
+                    console.log("Graph.click");
                     // console.dir(this);
                     // let xx = this._bounds;
                     // console.dir(xx);
                     // $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
-                    if (configPlanManager.hasOwnProperty("modalPropertyDetailId") && !$this.isZooming) {
+                    if (configPlanManager.hasOwnProperty("modalPropertyDetailId")) {
                         $("#" + configPlanManager.modalPropertyDetailId).modal({show: true}).on("shown.bs.modal", function (e) {
                             console.dir(G.info);
                             $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a, .description").addClass("d-none");
