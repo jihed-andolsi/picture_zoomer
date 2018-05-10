@@ -452,6 +452,7 @@ export default class Application extends PIXI.Application {
                 (Graph as any).alpha = 0;
                 (Graph as any).buttonMode = true;
                 (Graph as any).mouseover = function () {
+
                     if (!$this.modeSearh && !$this.startDrawing) {
                         (this as any).alpha = 1;
                     }
@@ -478,46 +479,22 @@ export default class Application extends PIXI.Application {
                         $('body').removeClass('tooltip-hidden');
                     }
                 };
+
                 (Graph as any).mouseout = function () {
                     if (!$this.modeSearh && !$this.startDrawing) {
                         (this as any).alpha = 0;
                     }
                 };
-                Graph.click = function() {
-                    console.log("Graph.click");
-                    // console.dir(this);
-                    // let xx = this._bounds;
-                    // console.dir(xx);
-                    // $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
-                    if (configPlanManager.hasOwnProperty("modalPropertyDetailId")) {
-                        $("#" + configPlanManager.modalPropertyDetailId).modal({show: true}).on("shown.bs.modal", function (e) {
-                            console.dir(G.info);
-                            $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a, .description").addClass("d-none");
-                            $(this).find("input[name='property_id']").val(G.info.id);
-                            $(this).find("input[name='property_ref']").val(G.info.title);
-                            let picture = (configPlanManager.hasOwnProperty("pictureNotFoundUrl")) ? configPlanManager.pictureNotFoundUrl : "";
-                            picture = (G.info.image && G.info.image.hasOwnProperty('small')) ? G.info.image.small : picture;
-                            (picture) ? $(this).find("img.img-property").attr("src", picture).removeClass("d-none") : "";
-                            $(this).find(".reference-property").html(G.info.title).removeClass("d-none");
-                            (G.info.surface_terrain) ? $(this).find(".surface-lot b").html(G.info.surface_terrain + " m²").parent().removeClass("d-none") : "";
-                            (G.info.surface_habitable) ? $(this).find(".surface-total b").html(G.info.surface_habitable + " m²").parent().removeClass("d-none") : "";
-                            (G.info.etage) ? $(this).find(".nbr-etage b").html(G.info.etage).parent().removeClass("d-none") : "";
-                            (G.info.landUse) ? $(this).find(".voaction b").html(G.info.landUse.name).parent().removeClass("d-none") : "";
-                            (G.info.cuffar) ? $(this).find(".cuffar b").html(G.info.cuffar).parent().removeClass("d-none") : "";
-                            (G.info.cosCoverage) ? $(this).find(".cos b").html(G.info.cosCoverage).parent().removeClass("d-none") : "";
-                            (G.info.emprise) ? $(this).find(".emprise b").html(G.info.emprise).parent().removeClass("d-none") : "";
-                            (G.info.elevation) ? $(this).find(".niveau b").html(G.info.elevation).parent().removeClass("d-none") : "";
-                            (G.info.description) ? $(this).find(".description").html(G.info.description).removeClass("d-none") : "";
-                            if (G.info.pdfDownloadLink) {
-                                let [firstPdf] = G.info.pdfDownloadLink;
-                                (firstPdf) ? $(this).find(".download-pdf a").attr("href", firstPdf).removeClass("d-none") : "";
-                            }
-                        }).on("hidden.bs.modal", function (e) {
-                            $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a, .description").addClass("d-none");
-                        });
-                    }
-                    if ($this.isMobile) {
-
+                Graph.touchstart = function(){
+                    Graph.dataTranslate = $this.zoomTrans;
+                };
+                Graph.click = Graph.tap = function() {
+                    if($this.isMobile) {
+                        if (Graph.dataTranslate == $this.zoomTrans) {
+                            $this.showModalProperty(G, $this);
+                        }
+                    } else {
+                        $this.showModalProperty(G, $this);
                     }
                 };
                 ($this as any).Container.addChild(Graph);
@@ -526,7 +503,42 @@ export default class Application extends PIXI.Application {
         });
         $this.Graphics = Graphics;
     }
+    private showModalProperty(G, $this){
+        // console.dir(this);
+        // let xx = this._bounds;
+        // console.dir(xx);
+        // $this.zoomTo(coords[0][0], coords[0][1], 4, Graph);
+        if (configPlanManager.hasOwnProperty("modalPropertyDetailId")) {
+            $("#" + configPlanManager.modalPropertyDetailId).modal({show: true}).on("shown.bs.modal", function (e) {
+                console.dir(G.info);
+                $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a, .description").addClass("d-none");
+                $(this).find("input[name='property_id']").val(G.info.id);
+                $(this).find("input[name='property_ref']").val(G.info.title);
+                let picture = (configPlanManager.hasOwnProperty("pictureNotFoundUrl")) ? configPlanManager.pictureNotFoundUrl : "";
+                picture = (G.info.image && G.info.image.hasOwnProperty('small')) ? G.info.image.small : picture;
+                (picture) ? $(this).find("img.img-property").attr("src", picture).removeClass("d-none") : "";
+                $(this).find(".reference-property").html(G.info.title).removeClass("d-none");
+                (G.info.surface_terrain) ? $(this).find(".surface-lot b").html(G.info.surface_terrain + " m²").parent().removeClass("d-none") : "";
+                (G.info.surface_habitable) ? $(this).find(".surface-total b").html(G.info.surface_habitable + " m²").parent().removeClass("d-none") : "";
+                (G.info.etage) ? $(this).find(".nbr-etage b").html(G.info.etage).parent().removeClass("d-none") : "";
+                (G.info.landUse) ? $(this).find(".voaction b").html(G.info.landUse.name).parent().removeClass("d-none") : "";
+                (G.info.cuffar) ? $(this).find(".cuffar b").html(G.info.cuffar).parent().removeClass("d-none") : "";
+                (G.info.cosCoverage) ? $(this).find(".cos b").html(G.info.cosCoverage).parent().removeClass("d-none") : "";
+                (G.info.emprise) ? $(this).find(".emprise b").html(G.info.emprise).parent().removeClass("d-none") : "";
+                (G.info.elevation) ? $(this).find(".niveau b").html(G.info.elevation).parent().removeClass("d-none") : "";
+                (G.info.description) ? $(this).find(".description").html(G.info.description).removeClass("d-none") : "";
+                if (G.info.pdfDownloadLink) {
+                    let [firstPdf] = G.info.pdfDownloadLink;
+                    (firstPdf) ? $(this).find(".download-pdf a").attr("href", firstPdf).removeClass("d-none") : "";
+                }
+            }).on("hidden.bs.modal", function (e) {
+                $(this).find("img.img-property, .reference-property, .surface-lot, .surface-total, .nbr-etage, .voaction, .cuffar, .cos, .emprise, .niveau, .download-pdf a, .description").addClass("d-none");
+            });
+        }
+        if ($this.isMobile) {
 
+        }
+    }
     private initZoomAction() {
         const $this = this;
         $this.canvas = d3.select(`#${$this.selector} canvas`);
