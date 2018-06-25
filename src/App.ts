@@ -490,7 +490,14 @@ export default class Application extends PIXI.Application {
                 };
                 Graph.click = Graph.tap = function() {
                     if($this.isMobile) {
-                        if (Graph.dataTranslate == $this.zoomTrans) {
+                        const k = Graph.dataTranslate.k == $this.zoomTrans.k;
+                        let x = Graph.dataTranslate.x - $this.zoomTrans.x;
+                        let y = Graph.dataTranslate.y - $this.zoomTrans.y;
+                        x = (x>0) ? x : x*-1;
+                        y = (y>0) ? y : y*-1;
+                        const x_diff = x <= 10;
+                        const y_diff = y <= 10;
+                        if (k && x_diff && y_diff) {
                             $this.showModalProperty(G, $this);
                         }
                     } else {
