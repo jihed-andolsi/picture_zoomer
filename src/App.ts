@@ -465,12 +465,12 @@ export default class Application extends PIXI.Application {
                     (picture) ? description += "<div class=\"col-6 pr-0\"><img class=\"img-fluid\" src='" + picture + "'></div>" : "";
                     description += "<div class=\"col-6\">";
 
-                    (G.info.landUse) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">Vocation: </b> " + G.info.landUse.name + "</p>" : "";
-                    (G.info.surface_terrain) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">Surface du lot: </b> " + G.info.surface_terrain + " <span>m²<span></p>" : "";
-                    (G.info.surface_habitable) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">Surface totale: </b> " + G.info.surface_habitable + " <span>m²<span></p>" : "";
+                    (G.info.landUse) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">"+configPlanManager.plan_lang.vocation+": </b> " + G.info.landUse.name + "</p>" : "";
+                    (G.info.surface_terrain) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">"+configPlanManager.plan_lang.surface_du_lot+"</b> " + G.info.surface_terrain + " <span>m²<span></p>" : "";
+                    (G.info.surface_habitable) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">"+configPlanManager.plan_lang.surface_totale+"</b> " + G.info.surface_habitable + " <span>m²<span></p>" : "";
                     if (G.info.pdfDownloadLink) {
                         let [firstPdf] = G.info.pdfDownloadLink;
-                        (firstPdf) ? description += "<p style='color: #d1a9a4'>Cliquer sur le bien pour télécharger le PDF</p>" : "";
+                        (firstPdf) ? description += "<p style='color: #d1a9a4'>"+configPlanManager.plan_lang.pdf+"</p>" : "";
                     }
                     description += "</div>";
                     description += "</div>";
@@ -488,8 +488,11 @@ export default class Application extends PIXI.Application {
                 Graph.touchstart = function(){
                     Graph.dataTranslate = $this.zoomTrans;
                 };
+                Graph.pointerdown = function(){
+                    Graph.dataTranslate = $this.zoomTrans;
+                };
                 Graph.click = Graph.tap = function() {
-                    if($this.isMobile) {
+                    //if($this.isMobile) {
                         const k = Graph.dataTranslate.k == $this.zoomTrans.k;
                         let x = Graph.dataTranslate.x - $this.zoomTrans.x;
                         let y = Graph.dataTranslate.y - $this.zoomTrans.y;
@@ -500,9 +503,9 @@ export default class Application extends PIXI.Application {
                         if (k && x_diff && y_diff) {
                             $this.showModalProperty(G, $this);
                         }
-                    } else {
+                    /*} else {
                         $this.showModalProperty(G, $this);
-                    }
+                    }*/
                 };
                 ($this as any).Container.addChild(Graph);
                 Graphics.push({G, Graph});
