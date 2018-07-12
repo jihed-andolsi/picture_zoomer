@@ -297,6 +297,18 @@ export default class Application extends PIXI.Application {
                             }
                         }
                     }
+                    if (dataSearch.hasOwnProperty('reference')) {
+                        /*console.dir(dataGraphic);
+                        console.log(dataGraphic.info.reference);
+                        console.log("++++++++++++++++++");
+                        console.log((dataSearch as any).reference);
+                        console.log("_____________________");*/
+                        if((dataSearch as any).reference && dataGraphic.info.title){
+                            if((dataGraphic.info.title).toLowerCase().indexOf((dataSearch as any).reference) == -1){
+                                return false;
+                            }
+                        }
+                    }
                     if (lots.length) {
                         let foundGraph = lots.filter(function (item) {
                             return item.toLowerCase() === dataGraphic.info.landUse.abbreviation.toLowerCase();
