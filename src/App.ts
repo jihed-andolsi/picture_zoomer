@@ -466,8 +466,8 @@ export default class Application extends PIXI.Application {
                     description += "<div class=\"col-6\">";
 
                     (G.info.landUse) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">"+configPlanManager.plan_lang.vocation+": </b> " + G.info.landUse.name + "</p>" : "";
-                    (G.info.surface_terrain) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">"+configPlanManager.plan_lang.surface_du_lot+"</b> " + G.info.surface_terrain + " <span>m²<span></p>" : "";
-                    (G.info.surface_habitable) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">"+configPlanManager.plan_lang.surface_totale+"</b> " + G.info.surface_habitable + " <span>m²<span></p>" : "";
+                    (G.info.surface_terrain_show) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">"+configPlanManager.plan_lang.surface_du_lot+": </b> " + G.info.surface_terrain_show + " <span>m²<span></p>" : "";
+                    (G.info.surface_habitable_show) ? description += "<p style=\"color:#949b46\"><b style=\"color:#fff;\">"+configPlanManager.plan_lang.surface_totale+": </b> " + G.info.surface_habitable_show + " <span>m²<span></p>" : "";
                     if (G.info.pdfDownloadLink) {
                         let [firstPdf] = G.info.pdfDownloadLink;
                         (firstPdf) ? description += "<p style='color: #d1a9a4'>"+configPlanManager.plan_lang.pdf+"</p>" : "";
@@ -528,8 +528,8 @@ export default class Application extends PIXI.Application {
                 picture = (G.info.image && G.info.image.hasOwnProperty('small')) ? G.info.image.small : picture;
                 (picture) ? $(this).find("img.img-property").attr("src", picture).removeClass("d-none") : "";
                 $(this).find(".reference-property").html(G.info.title).removeClass("d-none");
-                (G.info.surface_terrain) ? $(this).find(".surface-lot b").html(G.info.surface_terrain + " m²").parent().removeClass("d-none") : "";
-                (G.info.surface_habitable) ? $(this).find(".surface-total b").html(G.info.surface_habitable + " m²").parent().removeClass("d-none") : "";
+                (G.info.surface_terrain_show) ? $(this).find(".surface-lot b").html(G.info.surface_terrain_show + " m²").parent().removeClass("d-none") : "";
+                (G.info.surface_habitable_show) ? $(this).find(".surface-total b").html(G.info.surface_habitable_show + " m²").parent().removeClass("d-none") : "";
                 (G.info.etage) ? $(this).find(".nbr-etage b").html(G.info.etage).parent().removeClass("d-none") : "";
                 (G.info.landUse) ? $(this).find(".voaction b").html(G.info.landUse.name).parent().removeClass("d-none") : "";
                 (G.info.cuffar) ? $(this).find(".cuffar b").html(G.info.cuffar).parent().removeClass("d-none") : "";
