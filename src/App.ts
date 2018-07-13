@@ -212,6 +212,14 @@ export default class Application extends PIXI.Application {
             [($this.sprites as any).background_14, 'background_14'],
             [($this.sprites as any).background_15, 'background_15'],
             [($this.sprites as any).background_16, 'background_16'],
+            [($this.sprites as any).background_17, 'background_17'],
+            [($this.sprites as any).background_18, 'background_18'],
+            [($this.sprites as any).background_19, 'background_19'],
+            [($this.sprites as any).background_20, 'background_20'],
+            [($this.sprites as any).background_21, 'background_21'],
+            [($this.sprites as any).background_22, 'background_22'],
+            [($this.sprites as any).background_23, 'background_23'],
+            [($this.sprites as any).background_24, 'background_24'],
         ];
         $this.MultipleBackground.map((element) => {
             const $this = this;
