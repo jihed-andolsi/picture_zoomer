@@ -312,7 +312,7 @@ export default class Application extends PIXI.Application {
                         console.log((dataSearch as any).reference);
                         console.log("_____________________");*/
                         if((dataSearch as any).reference && dataGraphic.info.title){
-                            if((dataGraphic.info.title).toLowerCase().indexOf((dataSearch as any).reference) == -1){
+                            if((dataGraphic.info.title).toLowerCase().indexOf((dataSearch as any).reference.toLowerCase()) == -1){
                                 return false;
                             }
                         }
